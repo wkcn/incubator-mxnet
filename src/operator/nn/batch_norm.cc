@@ -32,9 +32,8 @@
 #include "../mkl/mkl_batch_norm-inl.h"
 #endif  // MXNET_USE_MKL2017
 
-/*! \brief inverse standard deviation <-> variance */
-#define VARIANCE_TO_INVSTD(__var$,    __eps$)   (1.0/sqrt((__var$) + DType(__eps$)))
-#define INVSTD_TO_VARIANCE(__invstd$, __eps$)   ((1.0 / ((__invstd$) * (__invstd$))) - (__eps$))
+/*! \brief compute standard deviation + eps*/
+#define COMPUTE_STD_ADD_EPS(__var$,    __eps$)   (sqrt((__var$) + DType(__eps$)))
 
 namespace mxnet {
 namespace op {
@@ -131,26 +130,16 @@ void BatchNormOp<xpu, DType, AccReal>::DoForward(mshadow::Stream<cpu> *,
       ForEachFast(inputData, channel,
                   [var, thisMean, channel](const DType *current_in_data) {
                     const AccReal current = *current_in_data;
-                    var[channel] += (current - thisMean) * (current - thisMean);
+                    const AccReal d = current - thisMean;
+                    var[channel] += d * d; 
                   });
-
-      const AccReal sum = var[channel];
-
-      AccReal invstd;
-      if (sum == 0 && param_.eps == 0.0) {
-        // Nobody likes to divide by zero
-        invstd = 0;
-      } else {
-        const AccReal variance = sum / itemCountPerChannel;
-        invstd = VARIANCE_TO_INVSTD(variance, param_.eps);
-      }
-      var[channel] = invstd;
+      var[channel] /= itemCountPerChannel;
     } else {
       const AccReal *rm = runningMean.dptr<AccReal>();
       const AccReal *rv = runningVariance.dptr<AccReal>();
 
       mean[channel] = rm[channel];
-      var[channel] = VARIANCE_TO_INVSTD(rv[channel], param_.eps);
+      var[channel] = rv[channel];
     }
 
     // compute output
@@ -158,18 +147,17 @@ void BatchNormOp<xpu, DType, AccReal>::DoForward(mshadow::Stream<cpu> *,
     const AccReal *b = bias.dptr<AccReal>();
 
     const AccReal thisMean = mean[channel];
-    const AccReal thisInvstd = var[channel];
+    const AccReal thisStdAddEps = COMPUTE_STD_ADD_EPS(var[channel], param_.eps);
     const AccReal thisWeight = w[channel];
     const AccReal thisBias = b[channel];
 
-    // note that var is still invstd
     if (!param_.fix_gamma) {
       if (IsWriting(req[batchnorm::kData])) {
         ForEachFast(inputData, outputData, channel,
-                    [thisWeight, thisBias, thisMean, thisInvstd](const DType *in_data,
+                    [thisWeight, thisBias, thisMean, thisStdAddEps](const DType *in_data,
                                                                  DType *out_data) {
                       *out_data = static_cast<DType>(
-                        ((*in_data - thisMean) * thisInvstd) * thisWeight + thisBias);
+                        ((*in_data - thisMean) / thisStdAddEps) * thisWeight + thisBias);
                     });
       }
     } else {
@@ -178,10 +166,10 @@ void BatchNormOp<xpu, DType, AccReal>::DoForward(mshadow::Stream<cpu> *,
       }
       if (IsWriting(req[batchnorm::kData])) {
         ForEachFast(inputData, outputData, channel,
-                    [thisWeight, thisBias, thisMean, thisInvstd](const DType *in_data,
+                    [thisWeight, thisBias, thisMean, thisStdAddEps](const DType *in_data,
                                                                  DType *out_data) {
                       *out_data = static_cast<DType>(
-                        ((*in_data - thisMean) * thisInvstd) + thisBias);
+                        ((*in_data - thisMean) / thisStdAddEps) + thisBias);
                     });
       }
     }
@@ -213,7 +201,7 @@ void BatchNormOp<xpu, DType, AccReal>::DoBackward(mshadow::Stream<cpu> *,
   // Output
   batchnorm::BNTensor3<DType> gradOut(out_grad[batchnorm::kOut], param_.axis);
   const TBlob &saveMean = out_data[batchnorm::kMean];
-  const TBlob &saveStd  = out_data[batchnorm::kVar];
+  const TBlob &saveVar  = out_data[batchnorm::kVar];
 
   const size_t channelCount = inputData.ChannelCount();
   const size_t itemCount    = inputData.Size() / channelCount;
@@ -222,7 +210,7 @@ void BatchNormOp<xpu, DType, AccReal>::DoBackward(mshadow::Stream<cpu> *,
   AccReal *runningMeanDataPtr = runningMean.dptr<AccReal>();
   AccReal *runningVarDataPtr  = runningVariance.dptr<AccReal>();
   const AccReal *saveMeanDataPtr = saveMean.dptr<AccReal>();
-  const AccReal *saveInvStdDataPtr = saveStd.dptr<AccReal>();
+  const AccReal *saveVarDataPtr = saveVar.dptr<AccReal>();
   AccReal *gradWeightData = gradWeight.dptr<AccReal>();
   AccReal *gradBiasData = gradBias.dptr<AccReal>();
 
@@ -232,11 +220,11 @@ void BatchNormOp<xpu, DType, AccReal>::DoBackward(mshadow::Stream<cpu> *,
   for (int channel = 0; channel < static_cast<int>(channelCount); ++channel) {
     const AccReal *weight = weights.dptr<AccReal>();
     const AccReal w = !param_.fix_gamma ? weight[channel] : AccReal(1);
-    AccReal mean, invstd;
+    AccReal mean, std_add_eps;
     if (is_train_and_not_global_stats) {
       mean = saveMeanDataPtr[channel];
-      invstd = saveInvStdDataPtr[channel];
-      const AccReal variance = INVSTD_TO_VARIANCE(invstd, param_.eps);
+      const AccReal variance = saveVarDataPtr[channel];
+      std_add_eps = COMPUTE_STD_ADD_EPS(variance, param_.eps);
 
       // update running averages
       runningMeanDataPtr[channel] = runningMeanDataPtr[channel] * param_.momentum
@@ -247,7 +235,7 @@ void BatchNormOp<xpu, DType, AccReal>::DoBackward(mshadow::Stream<cpu> *,
 
     } else {
       mean = runningMeanDataPtr[channel];
-      invstd = VARIANCE_TO_INVSTD(runningVarDataPtr[channel], param_.eps);
+      std_add_eps = COMPUTE_STD_ADD_EPS(runningVarDataPtr[channel], param_.eps);
     }
 
     // sumGradOut over all gradOutput in feature plane
@@ -272,13 +260,13 @@ void BatchNormOp<xpu, DType, AccReal>::DoBackward(mshadow::Stream<cpu> *,
         // dL/dX = (Q(dL/dY) - dot(Y, dL/dY) * Y) / σ * w
 
         // projection of gradOutput on to output scaled by std
-        const AccReal k = dotp * invstd * invstd / itemCount;
+        const AccReal k = dotp / std_add_eps / std_add_eps / itemCount;
         ForEachFast(inputData, gradIn, static_cast<size_t>(channel),
                     [&mean, &k](const DType *inputDataPtr, DType *gradIn_data) {
                       *gradIn_data = (*inputDataPtr - mean) * k;
                     });
 
-        const AccReal iw = invstd * w;
+        const AccReal iw = w / std_add_eps;
         const AccReal gradMean = sumGradOut / itemCount;
         ForEachFast(gradOut, gradIn, static_cast<size_t>(channel),
                     [iw, gradMean](const DType *gradOut_data, DType *gradIn_data) {
@@ -289,7 +277,7 @@ void BatchNormOp<xpu, DType, AccReal>::DoBackward(mshadow::Stream<cpu> *,
         // Q(X) = X - running_mean  ; i.e. input centered to zero mean
         // Y = Q(X) / running_std    ; i.e. BN output before weight and bias
         // dL/dX = w / running_std
-        const AccReal iw = invstd * w;
+        const AccReal iw = w / std_add_eps;
         ForEachFast(gradOut, gradIn, static_cast<size_t>(channel),
                     [iw](const DType *gradOut_data, DType *gradIn_data) {
                       *gradIn_data = *gradOut_data * iw;
@@ -302,7 +290,7 @@ void BatchNormOp<xpu, DType, AccReal>::DoBackward(mshadow::Stream<cpu> *,
 
     if (IsWriting(req[batchnorm::kGamma])) {
       if (!param_.fix_gamma) {
-        gradWeightData[channel] = scale * dotp * invstd;
+        gradWeightData[channel] = scale * dotp / std_add_eps;
       } else {
         gradWeightData[channel] = AccReal(0);
       }
