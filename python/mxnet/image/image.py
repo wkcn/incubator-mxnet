@@ -26,6 +26,7 @@ import random
 import logging
 import json
 import numpy as np
+from .. import context
 
 try:
     import cv2
@@ -132,7 +133,7 @@ def imdecode(buf, *args, **kwargs):
     <NDArray 224x224x3 @cpu(0)>
     """
     if not isinstance(buf, nd.NDArray):
-        buf = nd.array(np.frombuffer(buf, dtype=np.uint8), dtype=np.uint8)
+        buf = nd.array(np.frombuffer(buf, dtype=np.uint8), dtype=np.uint8, ctx = context.cpu())
     return _internal._cvimdecode(buf, *args, **kwargs)
 
 
