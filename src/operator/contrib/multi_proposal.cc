@@ -220,6 +220,7 @@ inline void ReorderProposals(const mshadow::Tensor<cpu, 2>& prev_dets,
 
 // greedily keep the max detections (already sorted)
 inline void NonMaximumSuppression(const mshadow::Tensor<cpu, 2>& dets,
+                                  const index_t num_valid_anchors,
                                   const float thresh,
                                   const index_t post_nms_top_n,
                                   mshadow::Tensor<cpu, 1> *area,
@@ -234,14 +235,14 @@ inline void NonMaximumSuppression(const mshadow::Tensor<cpu, 2>& dets,
   CHECK_EQ(keep->CheckContiguous(), true);
   // calculate area
   #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
-  for (int i = 0; i < static_cast<int>(dets.size(0)); ++i) {
+  for (int i = 0; i < static_cast<int>(num_valid_anchors); ++i) {
     (*area)[i] = (dets[i][2] - dets[i][0] + 1) *
                  (dets[i][3] - dets[i][1] + 1);
   }
 
   // calculate nms
   *out_size = 0;
-  for (index_t i = 0; i < dets.size(0) && (*out_size) < static_cast<int>(post_nms_top_n); ++i) {
+  for (index_t i = 0; i < num_valid_anchors && (*out_size) < static_cast<int>(post_nms_top_n); ++i) {
     float ix1 = dets[i][0];
     float iy1 = dets[i][1];
     float ix2 = dets[i][2];
@@ -254,7 +255,7 @@ inline void NonMaximumSuppression(const mshadow::Tensor<cpu, 2>& dets,
 
     (*keep)[(*out_size)++] = i;
     #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
-    for (int j = i + 1; j < static_cast<int>(dets.size(0)); ++j) {
+    for (int j = i + 1; j < static_cast<int>(num_valid_anchors); ++j) {
       if ((*suppressed)[j] > 0.0f) {
         continue;
       }
@@ -428,7 +429,14 @@ class MultiProposalOp : public Operator{
       Tensor<cpu, 1> keep = workspace_nms_i[2];
       suppressed = 0;  // surprised!
 
+      index_t num_valid_anchors = static_cast<index_t>(
+        std::lower_bound(order.dptr_, order.dptr_ + order.size(0),
+        -1.0f, [&score](size_t i1, size_t)
+        {return score.dptr_[i1] > -1.0f; }) - order.dptr_);
+      LOG(WARNING)<<"CPU"<<num_valid_anchors;
+
       utils::NonMaximumSuppression(workspace_ordered_proposals_i,
+                                   num_valid_anchors,
                                    param_.threshold,
                                    rpn_post_nms_top_n,
                                    &area,
@@ -437,22 +445,26 @@ class MultiProposalOp : public Operator{
                                    &out_size);
 
       // fill in output rois and output scores
-      #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
-      for (int i = 0; i < param_.rpn_post_nms_top_n; ++i) {
-        int out_index = b * param_.rpn_post_nms_top_n + i;
-        out[out_index][0] = b;
-        if (i < out_size) {
-          index_t index = keep[i];
+      if (out_size > 0) {
+        #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
+        for (int i = 0; i < param_.rpn_post_nms_top_n; ++i) {
+          int out_index = b * param_.rpn_post_nms_top_n + i;
+          out[out_index][0] = b;
+          index_t index = (i < out_size) ? keep[i] : keep[i % out_size];
           for (index_t j = 0; j < 4; ++j) {
             out[out_index][j + 1] =  workspace_ordered_proposals_i[index][j];
           }
           out_score[out_index][0] = workspace_ordered_proposals_i[index][4];
-        } else {
-          index_t index = keep[i % out_size];
+        }
+      } else {
+        #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
+        for (int i = 0; i < param_.rpn_post_nms_top_n; ++i) {
+          int out_index = b * param_.rpn_post_nms_top_n + i;
+          out[out_index][0] = b;
           for (index_t j = 0; j < 4; ++j) {
-            out[out_index][j + 1] = workspace_ordered_proposals_i[index][j];
+            out[out_index][j + 1] = 0.0f;
           }
-          out_score[out_index][0] = workspace_ordered_proposals_i[index][4];
+          out_score[out_index][0] = -1.0f;
         }
       }
     }
@@ -497,7 +509,7 @@ DMLC_REGISTER_PARAMETER(MultiProposalParam);
 
 MXNET_REGISTER_OP_PROPERTY(_contrib_MultiProposal, MultiProposalProp)
 .describe("Generate region proposals via RPN")
-.add_argument("cls_score", "NDArray-or-Symbol", "Score of how likely proposal is object.")
+.add_argument("cls_prob", "NDArray-or-Symbol", "Score of how likely proposal is object.")
 .add_argument("bbox_pred", "NDArray-or-Symbol", "BBox Predicted deltas from anchors for proposals")
 .add_argument("im_info", "NDArray-or-Symbol", "Image size and scale.")
 .add_arguments(MultiProposalParam::__FIELDS__());

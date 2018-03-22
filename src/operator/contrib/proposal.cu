@@ -29,6 +29,7 @@
 #include <mshadow/tensor.h>
 #include <mshadow/cuda/reduce.cuh>
 #include <thrust/sort.h>
+#include <thrust/binary_search.h>
 #include <thrust/execution_policy.h>
 #include <thrust/functional.h>
 
@@ -306,12 +307,13 @@ __global__ void nms_kernel(const int n_boxes, const float nms_overlap_thresh,
 }
 
 void _nms(const mshadow::Tensor<gpu, 2>& boxes,
+          const int num_valid_anchors,
           const float nms_overlap_thresh,
           const int rpn_post_nms_top_n,
           int *keep,
           int *num_out) {
   const int threadsPerBlock = sizeof(uint64_t) * 8;
-  const int boxes_num = boxes.size(0);
+  const int boxes_num = num_valid_anchors;
   const int boxes_dim = boxes.size(1);
 
   float* boxes_dev = boxes.dptr_;
@@ -371,18 +373,25 @@ __global__ void PrepareOutput(const int count,
        index < count;
        index += blockDim.x * gridDim.x) {
     out[index * 5] = 0;
-    if (index < out_size) {
-      int keep_i = keep[index];
-      for (int j = 0; j < 4; ++j) {
-        out[index * 5 + j + 1] = dets[keep_i * 5 + j];
+    if (out_size > 0) {
+      if (index < out_size) {
+        int keep_i = keep[index];
+        for (int j = 0; j < 4; ++j) {
+          out[index * 5 + j + 1] = dets[keep_i * 5 + j];
+        }
+        score[index] = dets[keep_i * 5 + 4];
+      } else {
+        int keep_i = keep[index % out_size];
+        for (int j = 0; j < 4; ++j) {
+          out[index * 5 + j + 1] = dets[keep_i * 5 + j];
+        }
+        score[index] = dets[keep_i * 5 + 4];
       }
-      score[index] = dets[keep_i * 5 + 4];
     } else {
-      int keep_i = keep[index % out_size];
       for (int j = 0; j < 4; ++j) {
-        out[index * 5 + j + 1] = dets[keep_i * 5 + j];
+        out[index * 5 + j + 1] = 0.0f;
       }
-      score[index] = dets[keep_i * 5 + 4];
+      score[index] = -1.0f;
     }
   }
 }
@@ -522,6 +531,9 @@ class ProposalGPUOp : public Operator{
                                order.dptr_,
                                thrust::greater<real_t>());
     FRCNN_CUDA_CHECK(cudaPeekAtLastError());
+    int num_valid_anchors = static_cast<int>(
+      thrust::lower_bound(thrust::device, score.dptr_, score.dptr_ + score.size(0),
+      -1.0f, thrust::greater<real_t>()) - score.dptr_);
 
     // Reorder proposals according to order
     float* workspace_ordered_proposals_ptr = NULL;
@@ -544,6 +556,7 @@ class ProposalGPUOp : public Operator{
     std::vector<int> _keep(workspace_ordered_proposals.size(0));
     int out_size = 0;
     _nms(workspace_ordered_proposals,
+         num_valid_anchors,
          param_.threshold,
          rpn_post_nms_top_n,
          &_keep[0],
