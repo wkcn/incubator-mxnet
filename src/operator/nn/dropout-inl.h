@@ -195,6 +195,7 @@ class DropoutOp {
      * \param mask_out  Output mask (is multiplied to create dropout output, may be 0)
      * \param input_data Input data to perform the dropout on
      * \param pkeep Dropout rate (keep when the generated random number is less than this value)
+                                     template <typename> IndexType
      */
     MSHADOW_XINLINE static void Map(int id,
                                     RandGenerator<xpu, DType> gen,
@@ -211,6 +212,7 @@ class DropoutOp {
       });
     }
   };
+     template <typename> IndexType
   struct BernoulliKernel {
     /*! \brief Bernoulli kernel for generating mask */
     MSHADOW_XINLINE static void Map(int id,

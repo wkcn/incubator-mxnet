@@ -451,8 +451,8 @@ inline bool SliceForwardInferStorageType(const nnvm::NodeAttrs& attrs,
 
 // slice the indptr of a csr
 struct SliceCsrIndPtr {
-  template<typename IType>
-  MSHADOW_XINLINE static void Map(int i, IType* out, const IType* in, const IType* base) {
+  template<typename IndexType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, IType* out, const IType* in, const IType* base) {
     KERNEL_ASSIGN(out[i], kWriteTo, in[i] - *base);
   }
 };
@@ -539,13 +539,13 @@ struct SliceDimTwoCsrAssign {
    * \param begin_col   begin column indice
    * \param end_col     end column indice
    */
-  template<typename IType, typename RType, typename DType>
-  MSHADOW_XINLINE static void Map(int i,
+  template<typename IndexType, typename IType, typename RType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i,
                                   IType* out_idx, DType* out_data,
                                   const RType* out_indptr,
                                   const IType* in_idx, const DType* in_data,
                                   const RType* in_indptr,
-                                  const int begin_col, const int end_col) {
+                                  const IndexType begin_col, const IndexType end_col) {
     RType ind = out_indptr[i];
     for (RType j = in_indptr[i]; j < in_indptr[i+1]; j++) {
       // indices of CSRNDArray are in ascending order per row
@@ -742,12 +742,12 @@ struct slice_forward;
 template<int ndim, int req>
 struct slice_forward<ndim, req, gpu> {
   // i is the i-th row after flattening out into 2D tensor
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* data,
                                   const mshadow::Shape<ndim> dshape,
                                   const mshadow::Shape<ndim> oshape,
-                                  const common::StaticArray<int, ndim> begin,
-                                  const common::StaticArray<int, ndim> step) {
+                                  const common::StaticArray<IndexType, ndim> begin,
+                                  const common::StaticArray<IndexType, ndim> step) {
     const int data_last_dim_size = dshape[ndim-1];
     const int out_last_dim_size = oshape[ndim-1];
     const int step_last_dim = step[ndim-1];
@@ -770,12 +770,12 @@ struct slice_forward<ndim, req, gpu> {
 template<int ndim, int req>
 struct slice_forward<ndim, req, cpu> {
   // i is the i-th row after flattening out into 2D tensor
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* data,
                                   const mshadow::Shape<ndim> dshape,
                                   const mshadow::Shape<ndim> oshape,
-                                  const common::StaticArray<int, ndim> begin,
-                                  const common::StaticArray<int, ndim> step) {
+                                  const common::StaticArray<IndexType, ndim> begin,
+                                  const common::StaticArray<IndexType, ndim> step) {
     const int data_last_dim_size = dshape[ndim-1];
     const int out_last_dim_size = oshape[ndim-1];
     const int step_last_dim = step[ndim-1];
@@ -835,12 +835,12 @@ struct slice_assign;
 template<int ndim, int req>
 struct slice_assign<ndim, req, cpu> {
   // i is the i-th row after flattening out into 2D tensor
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* val,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* val,
                                   const mshadow::Shape<ndim> oshape,
                                   const mshadow::Shape<ndim> vshape,
-                                  const common::StaticArray<int, ndim> begin,
-                                  const common::StaticArray<int, ndim> step) {
+                                  const common::StaticArray<IndexType, ndim> begin,
+                                  const common::StaticArray<IndexType, ndim> step) {
     const int data_last_dim_size = oshape[ndim-1];
     const int out_last_dim_size = vshape[ndim-1];
     const int step_last_dim = step[ndim-1];
@@ -865,12 +865,12 @@ struct slice_assign<ndim, req, cpu> {
 template<int ndim, int req>
 struct slice_assign<ndim, req, gpu> {
   // i is the i-th row after flattening out into 2D tensor
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* val,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* val,
                                   const mshadow::Shape<ndim> oshape,
                                   const mshadow::Shape<ndim> vshape,
-                                  const common::StaticArray<int, ndim> begin,
-                                  const common::StaticArray<int, ndim> step) {
+                                  const common::StaticArray<IndexType, ndim> begin,
+                                  const common::StaticArray<IndexType, ndim> step) {
     const int data_last_dim_size = oshape[ndim-1];
     const int out_last_dim_size = vshape[ndim-1];
     const int step_last_dim = step[ndim-1];
@@ -1023,13 +1023,13 @@ inline bool SliceAssignScalarOpShape(const nnvm::NodeAttrs& attrs,
 template<int ndim>
 struct slice_assign_scalar {
   // i is the i-th row after flattening out into 2D tensor
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType val,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType val,
                                   const OpReqType req,
                                   const mshadow::Shape<ndim> oshape,
                                   const mshadow::Shape<ndim> vshape,
-                                  const common::StaticArray<int, ndim> begin,
-                                  const common::StaticArray<int, ndim> step) {
+                                  const common::StaticArray<IndexType, ndim> begin,
+                                  const common::StaticArray<IndexType, ndim> step) {
     const int data_last_dim_size = oshape[ndim-1];
     const int out_last_dim_size = vshape[ndim-1];
     const int step_last_dim = step[ndim-1];
@@ -1428,8 +1428,8 @@ struct ClipParam : public dmlc::Parameter<ClipParam> {
 
 
 struct clip {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* datas,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* datas,
                                   DType a_min, DType a_max) {
     DType data = datas[i];
     if (data > a_max) {
@@ -1444,8 +1444,8 @@ struct clip {
 
 
 struct clip_grad {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* grad, const DType* datas,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* grad, const DType* datas,
                                   DType a_min, DType a_max) {
     DType data = datas[i];
     if (data > a_max) {
@@ -2279,9 +2279,9 @@ MSHADOW_XINLINE void update_index(int index_position, int dim_size, int *idx,
  */
 template<int req>
 struct depth_to_space_forward {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* in_data,
-                                  const int block, const int* size, const int* offset_arr) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* in_data,
+                                  const IndexType block, const IndexType* size, const IndexType* offset_arr) {
     int inp_index = 0, idx = i, dim_size;
     dim_size = block;
     update_index(2, dim_size, &idx, &inp_index, offset_arr);
@@ -2314,10 +2314,10 @@ struct depth_to_space_forward {
  */
 template<int req>
 struct compute_offset_for_depth_to_space {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* offset_arr, DType* size, const int block,
-                                  const int32_t size0, const int32_t size1, const int32_t size2,
-                                  const int32_t size3) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* offset_arr, DType* size, const IndexType block,
+                                  const IndexType32_t size0, const IndexType32_t size1, const IndexType32_t size2,
+                                  const IndexType32_t size3) {
     size[0] = size0;
     size[1] = size1;
     size[2] = size2;
@@ -2430,9 +2430,9 @@ inline bool SpaceToDepthOpType(const nnvm::NodeAttrs& attrs,
  */
 template<int req>
 struct space_to_depth_forward {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* in_data, const int block,
-                                  const int* size, const int* offset_arr) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* in_data, const IndexType block,
+                                  const IndexType* size, const IndexType* offset_arr) {
     int inp_index = 0, idx = i, dim_size;
     dim_size = size[3] / block;
     update_index(4, dim_size, &idx, &inp_index, offset_arr);
@@ -2465,10 +2465,10 @@ struct space_to_depth_forward {
  */
 template<int req>
 struct compute_offset_for_space_to_depth {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* offset_arr, DType* size, const int block,
-                                  const int32_t size0, const int32_t size1,
-                                  const int32_t size2, const int32_t size3) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* offset_arr, DType* size, const IndexType block,
+                                  const IndexType32_t size0, const IndexType32_t size1,
+                                  const IndexType32_t size2, const IndexType32_t size3) {
     size[0] = size0;
     size[1] = size1;
     size[2] = size2;

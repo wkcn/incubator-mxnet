@@ -49,8 +49,8 @@ struct QuantizeParam : public dmlc::Parameter<QuantizeParam> {
 
 // quantize float to uint8_t
 struct quantize_unsigned {
-  template<typename DstDType, typename SrcDType>
-  MSHADOW_XINLINE static void Map(int i, DstDType *out, float *omin_range,
+  template<typename IndexType, typename DstDType, typename SrcDType>
+  MSHADOW_XINLINE static void Map(IndexType i, DstDType *out, float *omin_range,
                                   float *omax_range, const SrcDType *in,
                                   const float *imin_range, const float *imax_range,
                                   const double min_limit, const double max_limit) {
@@ -66,8 +66,8 @@ struct quantize_unsigned {
 
 // keep zero-center
 struct quantize_zero_centered {
-  template<typename DstDType, typename SrcDType>
-  MSHADOW_XINLINE static void Map(int i, DstDType *out, float *omin_range,
+  template<typename IndexType, typename DstDType, typename SrcDType>
+  MSHADOW_XINLINE static void Map(IndexType i, DstDType *out, float *omin_range,
                                   float *omax_range, const SrcDType *in,
                                   const float *imin_range, const float *imax_range,
                                   const float quantized_range) {

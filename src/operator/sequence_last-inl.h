@@ -65,9 +65,9 @@ struct SequenceLastParam : public dmlc::Parameter<SequenceLastParam> {
 
 template <int req>
 struct SequenceLastKernel {
-  template <typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *out, const DType *in,
-                                  const DType *idx, int offset1, int offset2,
+  template <typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *out, const DType *in,
+                                  const DType *idx, IndexType offset1, IndexType offset2,
                                   mshadow::Shape<2> oshape) {
     const auto opos = mxnet_op::unravel(i, oshape);
     const int seqpos = static_cast<int>(idx[opos[0]]) - 1;
@@ -77,9 +77,9 @@ struct SequenceLastKernel {
 };
 
 struct SequenceLastGradKernel {
-  template <typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *in_grad, const DType *out_grad,
-                                  const DType *idx, int offset1, int offset2,
+  template <typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *in_grad, const DType *out_grad,
+                                  const DType *idx, IndexType offset1, IndexType offset2,
                                   mshadow::Shape<2> oshape) {
     const auto opos = mxnet_op::unravel(i, oshape);
     const int seqpos = static_cast<int>(idx[opos[0]]) - 1;

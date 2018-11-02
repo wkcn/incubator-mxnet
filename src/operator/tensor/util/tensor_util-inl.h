@@ -41,8 +41,8 @@ struct MarkRowFlgKernel {
    * \param row_flg  flag array for indices
    * \param row_idx  row index array storing indices of rows
    */
-  template<typename IType, typename DType>
-  MSHADOW_XINLINE static void Map(int tid,
+  template<typename IndexType, typename IType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType tid,
                                   DType* row_flg,
                                   const IType* row_idx) {
     nnvm::dim_t idx = static_cast<nnvm::dim_t>(row_idx[tid]);
@@ -62,8 +62,8 @@ struct FillRspRowIdxKernel {
    * \param row_flg_sum  inclusive prefix sum array over 0/1 marked row flag array
    * \param num_rows     rsp tensor number of rows (shape)
    */
-  template<typename RType>
-  MSHADOW_XINLINE static void Map(int tid,
+  template<typename IndexType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType tid,
                                   RType* row_idx,
                                   const nnvm::dim_t* row_flg_sum,
                                   const nnvm::dim_t num_rows) {
@@ -83,8 +83,8 @@ struct FillRspRowIdxKernel {
  * \param data the input row id in sorted order
  */
 struct MarkLookupTable {
-  template<typename IType, typename DType>
-  MSHADOW_XINLINE static void Map(int i, IType* out, const DType* data) {
+  template<typename IndexType, typename IType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IType* out, const DType* data) {
     out[static_cast<nnvm::dim_t>(data[i])] = i;
   }
 };

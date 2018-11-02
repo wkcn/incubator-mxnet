@@ -119,8 +119,8 @@ inline bool SparseRetainBackwardInferStorageType(const nnvm::NodeAttrs& attrs,
  * where each thread only perform binary search once.
  */
 struct SparseRetainRspThreadKernel {
-  template<typename DType, typename RType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, RType* out_idx,
+  template<typename IndexType, typename DType, typename RType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, RType* out_idx,
                                   const DType* in_data, const RType* in_idx,
                                   const IType* idx, const size_t nnr,
                                   const size_t row_length) {
@@ -160,8 +160,8 @@ struct SparseRetainRspThreadKernel {
  * that idx has been sorted in ascending order.
  */
 struct SparseRetainRspRowBlockKernel {
-  template<typename DType, typename RType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, RType* out_idx,
+  template<typename IndexType, typename DType, typename RType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, RType* out_idx,
                                   const DType* in_data, const RType* in_idx,
                                   const IType* idx, const size_t num_indices,
                                   const size_t nnr, const size_t row_length,
@@ -218,8 +218,8 @@ struct SparseRetainRspRowBlockKernel {
  * Only used when input rsp is dense.
  */
 struct SparseRetainCopyIndices {
-  template<typename RType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, RType* out_idx, IType* idx) {
+  template<typename IndexType, typename RType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, RType* out_idx, IType* idx) {
     out_idx[i] = idx[i];
   }
 };
@@ -232,8 +232,8 @@ struct SparseRetainCopyIndices {
  * instead of rows.
  */
 struct SparseRetainCopyRetainedRowsFromDnsPerElem {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_rows, const DType* in_rows,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_rows, const DType* in_rows,
                                   const IType* idx, const size_t row_length) {
     const size_t irow = i / row_length;
     const size_t icol = i % row_length;
@@ -248,8 +248,8 @@ struct SparseRetainCopyRetainedRowsFromDnsPerElem {
  * So it's parallelized by out_rows' rows instead of elements.
  */
 struct SparseRetainCopyRetainedRowsFromDnsPerRow {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_rows, const DType* in_rows,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_rows, const DType* in_rows,
                                   const IType* idx, const size_t row_length) {
     const size_t dst_offset = i * row_length;
     const size_t src_offset = static_cast<size_t>(idx[i]) * row_length;
@@ -346,8 +346,8 @@ void SparseRetainOpForwardEx(const nnvm::NodeAttrs& attrs,
 
 template<int req>
 struct SparseRetainRspGradKernel {
-  template<typename DType, typename RType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* in_grad, RType* in_grad_idx,
+  template<typename IndexType, typename DType, typename RType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* in_grad, RType* in_grad_idx,
                                   const DType* out_grad, const IType* idx,
                                   const size_t row_length) {
     const RType irow = idx[i];

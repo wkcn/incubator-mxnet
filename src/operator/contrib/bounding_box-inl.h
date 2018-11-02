@@ -176,8 +176,8 @@ struct less_than : public mxnet_op::tunable {
 }   // namespace mshadow_op
 
 struct corner_to_center {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *data, int stride) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *data, IndexType stride) {
     int index = i * stride;
     DType left = data[index];
     if (left < 0) return;
@@ -192,8 +192,8 @@ struct corner_to_center {
 };
 
 struct center_to_corner {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *data, int stride) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *data, IndexType stride) {
     int index = i * stride;
     DType x = data[index];
     if (x < 0) return;
@@ -241,10 +241,10 @@ MSHADOW_XINLINE DType BoxArea(const DType *box, int encode) {
  * \param encode passed to BoxArea to compute area
  */
 struct compute_area {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *out, const DType *in,
-                                  const int32_t *indices, const int32_t *batch_start,
-                                  int topk, int num_elem, int stride, int encode) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *out, const DType *in,
+                                  const IndexType32_t *indices, const IndexType32_t *batch_start,
+                                  IndexType topk, IndexType num_elem, IndexType stride, IndexType encode) {
     int b = i / topk;
     int k = i % topk;
     int pos = static_cast<int>(batch_start[b]) + k;
@@ -301,12 +301,12 @@ MSHADOW_XINLINE DType Intersect(const DType *a, const DType *b, int encode) {
    * \param DType the data type
    */
 struct nms_impl {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, int32_t *index, const int32_t *batch_start,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType32_t *index, const IndexType32_t *batch_start,
                                   const DType *input, const DType *areas,
-                                  int k, int ref, int num,
-                                  int stride, int offset_box, int offset_id,
-                                  float thresh, bool force, int encode) {
+                                  IndexType k, IndexType ref, IndexType num,
+                                  IndexType stride, IndexType offset_box, IndexType offset_id,
+                                  float thresh, bool force, IndexType encode) {
     int b = i / k;  // batch
     int pos = i % k + ref + 1;  // position
     ref = static_cast<int>(batch_start[b]) + ref;
@@ -346,10 +346,10 @@ struct nms_impl {
    * \param stride input stride, usually 6 (id-score-x1-y2-x2-y2)
    */
 struct nms_assign {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *out, DType *record, const DType *input,
-                                  const int32_t *index, const int32_t *batch_start,
-                                  int k, int num, int stride) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *out, DType *record, const DType *input,
+                                  const IndexType32_t *index, const IndexType32_t *batch_start,
+                                  IndexType k, IndexType num, IndexType stride) {
     int count = 0;
     for (int j = 0; j < k; ++j) {
       int pos = static_cast<int>(batch_start[i]) + j;
@@ -372,9 +372,9 @@ struct nms_assign {
 
 
 struct nms_backward {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *in_grad, const DType *out_grad,
-                                  const DType *record, int num, int stride) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *in_grad, const DType *out_grad,
+                                  const DType *record, IndexType num, IndexType stride) {
     int index = static_cast<int>(record[i]);
     if (index < 0) return;
     int loc = index * stride;
@@ -615,10 +615,10 @@ inline bool BoxOverlapShape(const nnvm::NodeAttrs& attrs,
 }
 
 struct compute_overlap {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *out, const DType *lhs,
-                                  const DType *rhs, int num,
-                                  int begin, int stride, int encode) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *out, const DType *lhs,
+                                  const DType *rhs, IndexType num,
+                                  IndexType begin, IndexType stride, IndexType encode) {
     int l = i / num;
     int r = i % num;
     int l_index = l * stride + begin;
@@ -726,11 +726,11 @@ inline bool MatchingShape(const nnvm::NodeAttrs& attrs,
 }
 
 struct bipartite_matching {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType *row_marker, DType *col_marker,
-                                  const DType *scores, const int32_t *sorted_index,
-                                  int num_batch, int num_row, int num_col,
-                                  float threshold, bool is_ascend, int topk) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType *row_marker, DType *col_marker,
+                                  const DType *scores, const IndexType32_t *sorted_index,
+                                  IndexType num_batch, IndexType num_row, IndexType num_col,
+                                  float threshold, bool is_ascend, IndexType topk) {
     int stride = num_row * num_col;
     const int32_t *index = sorted_index + i * stride;
     const DType *score = scores + i * stride;

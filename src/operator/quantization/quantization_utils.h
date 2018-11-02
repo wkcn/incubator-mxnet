@@ -95,8 +95,8 @@ MSHADOW_XINLINE float QuantizedToFloat(T input, float min_range, float max_range
 }
 
 struct QuantizedToFloatStruct {
-  template<typename T>
-  MSHADOW_XINLINE static void Map(int i, float *output, const T *input,
+  template<typename IndexType, typename T>
+  MSHADOW_XINLINE static void Map(IndexType i, float *output, const T *input,
                                   const float *range_min, const float *range_max) {
     output[i] = QuantizedToFloat(input[i], *range_min, *range_max);
   }
@@ -157,7 +157,8 @@ MSHADOW_XINLINE void QuantizationRangeForMultiplication(float min_a, float max_a
 }
 
 struct QuantizationRangeForMultiplicationStruct {
-  MSHADOW_XINLINE static void Map(int i,
+  template <typename IndexType>
+  MSHADOW_XINLINE static void Map(IndexType i,
                                   float *min_c,
                                   float *max_c,
                                   const float *min_a,

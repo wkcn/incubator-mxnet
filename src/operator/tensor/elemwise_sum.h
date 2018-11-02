@@ -46,8 +46,8 @@ struct Sum {
   MSHADOW_XINLINE static DType sum(int i, const DType* a, const DTypes... b) {
     return a[i] + sum(i, b...);
   }
-  template<typename DType, typename... DTypes>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const OpReqType req, const DType* in0,
+  template<typename IndexType, typename DType, typename... DTypes>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const OpReqType req, const DType* in0,
     const DTypes... ins) {
     KERNEL_ASSIGN(out[i], req, sum(i, in0, ins...));
   }

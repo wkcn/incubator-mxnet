@@ -31,6 +31,7 @@ namespace mxnet {
 namespace op {
 
 // value + bias_value * (range1 / limit_range1) * (limit_range2 / range2)
+                                   template <typename> IndexType
 struct QuantizedBiasAddKernel {
   MSHADOW_XINLINE static void Map(int i, size_t bias_size, int32_t *out,
                                   const int8_t *bias, const float *min_out,

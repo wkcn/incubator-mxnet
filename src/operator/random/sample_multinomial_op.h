@@ -117,8 +117,8 @@ inline bool SampleMultinomialOpType(const nnvm::NodeAttrs& attrs,
 }
 
 struct SampleMultinomialKernel {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, index_t K, index_t M,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t K, index_t M,
                                   DType* dist, float* uniform, IType* out,
                                   DType* prob) {
     for (index_t j = 0; j < M; ++j) {

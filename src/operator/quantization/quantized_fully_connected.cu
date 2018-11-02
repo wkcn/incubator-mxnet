@@ -32,6 +32,7 @@ namespace op {
 
 #if CUDA_VERSION >= 8000
 // value + bias_value * (range1 / limit_range1) * (limit_range2 / range2)
+                                   template <typename> IndexType
 struct QuantizedBiasAddKernel {
   MSHADOW_XINLINE static void Map(int i, size_t k, int32_t *out,
                                   const int8_t *bias, const float *min_out,

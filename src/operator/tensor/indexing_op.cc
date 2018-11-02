@@ -100,8 +100,8 @@ struct CsrTakeDataKernel {
    * \param idx_ptr       ptr to indices
    * \param num_rows      maximum number of rows in src array
    */
-  template<typename IType, typename DType, typename RType>
-  MSHADOW_XINLINE static void Map(int tid, RType* out_idx, DType* out_data,
+  template<typename IndexType, typename IType, typename DType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType tid, RType* out_idx, DType* out_data,
                                   const RType* out_indptr, const RType* src_idx,
                                   const DType* src_data, const RType* src_indptr,
                                   const IType* idx_ptr, const nnvm::dim_t num_rows) {
@@ -133,8 +133,8 @@ struct CsrTakeRowCountKernel {
    * \param idx_ptr       ptr to indices
    * \param num_rows      maximum number of rows in src array
    */
-  template<typename IType, typename RType>
-  MSHADOW_XINLINE static void Map(int tid, RType* out_indptr,
+  template<typename IndexType, typename IType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType tid, RType* out_indptr,
                                   const RType* src_indptr, const IType* idx_ptr,
                                   const nnvm::dim_t num_rows) {
     if (tid == 0) {

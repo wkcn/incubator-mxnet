@@ -38,9 +38,9 @@ namespace op {
 
 template<int req>
 struct index_copy_forward {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i,
-                                  int dim,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i,
+                                  IndexType dim,
                                   IType* index,
                                   DType* new_tensor,
                                   DType* out_tensor) {
@@ -85,19 +85,19 @@ void IndexCopyForward(const nnvm::NodeAttrs& attrs,
 
 template<int req>
 struct index_copy_backward {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i,
-                                  int dim,
-                                  int index_size,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i,
+                                  IndexType dim,
+                                  IndexType index_size,
                                   DType* out_grad,
                                   IType* index,
                                   DType* in_grad_1,
                                   DType* in_grad_2) {
     // Copy to in_grad_2
-    for (int p = 0; p < index_size; ++p) {
-      int idx = static_cast<int>(index[p]);
+    for (IndexType p = 0; p < index_size; ++p) {
+      IndexType idx = static_cast<IndexType>(index[p]);
       if (i >= idx*dim && i < (idx+1)*dim) {
-        int offset = i - idx*dim;
+        IndexType offset = i - idx*dim;
         KERNEL_ASSIGN(in_grad_2[p*dim+offset], req, out_grad[i]);
         return;
       }

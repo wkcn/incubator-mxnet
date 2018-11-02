@@ -588,8 +588,8 @@ template <typename red_op, int req>
  * rows we have the sum along the axis for the subset of columns.
  */
 struct ReduceCsrKernel<red_op, req, 0> {
-  template <typename RType, typename IType, typename DType>
-  MSHADOW_XINLINE static void Map(int j, DType* out_data,
+  template <typename IndexType, typename RType, typename IType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType j, DType* out_data,
                                   const RType* in_indptr, const IType* in_idx,
                                   const DType* in_data,
                                   DType* sum,
@@ -670,8 +670,8 @@ struct ReduceCsrKernel<red_op, req, 0> {
 
 template <typename red_op, int req>
 struct ReduceCsrKernel<red_op, req, 1> {
-  template <typename RType, typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data,
+  template <typename IndexType, typename RType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data,
                                   const RType* in_indptr,
                                   const DType* in_data) {
     DType sum, residual;
@@ -1171,9 +1171,9 @@ void L2NormComputeEx(const nnvm::NodeAttrs& attrs,
 /*! \brief index element from array along axes */
 template<int ndim, bool clip = true>
 struct pick {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* a,
-                                  const IType *idx, int M, int stride,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* a,
+                                  const IType *idx, IndexType M, IndexType stride,
                                   mshadow::Shape<ndim> bshape,
                                   mshadow::Shape<ndim> sshape) {
     using namespace broadcast;
@@ -1193,9 +1193,9 @@ struct pick {
 /*! \brief index element from array along axes */
 template<int ndim, bool clip = true>
 struct pick_grad {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* igrad, const DType* ograd,
-                                  const IType *idx, int M, int stride,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* igrad, const DType* ograd,
+                                  const IType *idx, IndexType M, IndexType stride,
                                   mshadow::Shape<ndim> bshape,
                                   mshadow::Shape<ndim> sshape) {
     using namespace broadcast;

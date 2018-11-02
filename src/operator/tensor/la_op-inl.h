@@ -34,23 +34,23 @@ using namespace mshadow;
 
 // Helper functions.
 struct CopyLowerToUpper {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, int matrix_size, int stride, DType* data) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType matrix_size, IndexType stride, DType* data) {
     // Below computation works even when we are dealing with a batch of matrices.
     const int row((i % matrix_size) / stride), col(i % stride);
     if ( row > col ) data[i + (col - row) * (stride - 1)] = data[i];
   }
 };
 struct ZeroUpper {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, int matrix_size, int stride, DType* data) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType matrix_size, IndexType stride, DType* data) {
     const int row((i % matrix_size) / stride), col(i % stride);
     if ( row < col ) data[i] = 0;
   }
 };
 struct Scale {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType scale, DType* data) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType scale, DType* data) {
     data[i] *= scale;
   }
 };
@@ -189,8 +189,8 @@ struct trmm {
 
 // Useful operator that is not part of BLAS/LAPACK.
 struct ForwardSumLogDiag {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, int N, int stride, DType* A, DType* B) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType N, IndexType stride, DType* A, DType* B) {
     DType sum(0);
     const int offset(i * N * stride);
     for ( int j = 0; j < N; ++j ) {
@@ -290,8 +290,8 @@ struct gelqf {
 // If u denotes a row, we choose the sign s.t. u_k > 0, where k = argmax|u_j|. In case
 // of a tie, the smaller index k decides.
 struct SyevdEigenVecSigns {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, int n, DType* U, int ldu) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType n, DType* U, IndexType ldu) {
     DType* urow(U + (i*ldu));
     DType maxval(fabs(urow[0])), uval(0.0);
     int maxind(0);
@@ -510,8 +510,8 @@ struct trmm_backward {
 };
 
 struct BackwardSumLogDiag {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, int M, int stride, DType* dB, DType* A, DType* dA) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType M, IndexType stride, DType* dB, DType* A, DType* dA) {
     const int matrix(i / M), row((i % M) / stride), col(i % stride);
     dA[i] = (row == col ? dB[matrix]/A[i] : DType(0));
   }
@@ -612,10 +612,10 @@ MSHADOW_XINLINE double syevd_back_helper_eps(double* X) {
 }
 
 struct SyevdBackHelper {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int k, int n, DType* X, int ldx, DType* L,
-                                  int ldl, DType* dL, int lddl, DType* Y,
-                                  int ldy) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType k, IndexType n, DType* X, IndexType ldx, DType* L,
+                                  IndexType ldl, DType* dL, IndexType lddl, DType* Y,
+                                  IndexType ldy) {
     const int offx(k*n*ldx);
     const int offy(k*n*ldy);
     const int offl(k*ldl);

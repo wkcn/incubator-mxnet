@@ -35,8 +35,8 @@ namespace op {
  */
 
 struct is_valid_check {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, char* out, const DType* data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, char* out, const DType* data,
                                   const DType min, const DType max) {
     if (data[i] < min || data[i] > max) *out = 1;
   }
@@ -389,8 +389,8 @@ inline void SparseEmbeddingOpBackwardRspImpl<gpu>(const bool deterministic,
 }
 
 struct backward_gather_nd_gpu {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, int N, int M, int K,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType N, IndexType M, IndexType K,
                                   const mshadow::Shape<10> strides,
                                   DType* out, const DType* data,
                                   const IType* indices) {

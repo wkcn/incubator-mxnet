@@ -92,8 +92,8 @@ inline bool UnravelOpShape(const nnvm::NodeAttrs& attrs,
 }
 
 struct ravel_index {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, index_t N, index_t ndim, index_t *shape,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t N, index_t ndim, index_t *shape,
                                   DType *unravelled, DType *ravelled) {
     index_t ret = 0;
     #pragma unroll
@@ -105,12 +105,12 @@ struct ravel_index {
 };
 
 struct unravel_index {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, index_t N, index_t ndim, index_t *shape,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t N, index_t ndim, index_t *shape,
                                   DType *unravelled, DType *ravelled) {
     index_t idx(ravelled[i]);
     #pragma unroll
-    for (int j = ndim; j--; ) {
+    for (IndexType j = ndim; j--; ) {
       index_t tmp = idx / shape[j];
       unravelled[i+j*N] = idx - tmp*shape[j];
       idx = tmp;

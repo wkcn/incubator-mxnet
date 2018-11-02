@@ -31,8 +31,8 @@ namespace op {
 
 template<int req>
 struct SGDMomStdDnsRspDnsKernel<req, gpu> {
-  template<typename DType, typename IType, typename RType>
-  MSHADOW_XINLINE static void Map(int i, index_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t row_length, DType* out_data,
     DType* mom_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const RType* prefix_sum, const DType clip_gradient,
     const DType momentum, const DType lr, const DType wd, const DType rescale_grad) {
@@ -126,8 +126,8 @@ void SGDMomStdUpdateDnsRspDnsImpl<gpu>(const SGDMomParam& param,
 
 template<int req>
 struct AdamStdDnsRspDnsKernel<req, gpu> {
-  template<typename DType, typename IType, typename RType>
-  MSHADOW_XINLINE static void Map(int i, const nnvm::dim_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType i, const nnvm::dim_t row_length, DType* out_data,
     DType* mean_data, DType* var_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const RType* prefix_sum, const DType clip_gradient,
     const DType beta1, const DType beta2, const DType lr, const DType wd,

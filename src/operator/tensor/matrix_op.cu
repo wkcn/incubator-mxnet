@@ -43,12 +43,12 @@ struct SliceMarkCsrIndPtr {
    * \param begin_col   starting indice
    * \param end_col     ending indice
    */
-  template<typename IType, typename RType>
-  MSHADOW_XINLINE static void Map(int i,
+  template<typename IndexType, typename IType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType i,
                                   RType* prefix_sum,
                                   const IType* in_idx,
                                   const RType* in_indptr,
-                                  const int begin_col, const int end_col) {
+                                  const IndexType begin_col, const IndexType end_col) {
     if (i == 0) {
       prefix_sum[0] = 0;
     }

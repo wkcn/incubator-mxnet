@@ -126,8 +126,8 @@ inline bool InitEyeShape(const nnvm::NodeAttrs& attrs,
 
 template<int req>
 struct eye_dns_fill {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data,
                                   const nnvm::dim_t init_col,
                                   const nnvm::dim_t k,
                                   const nnvm::dim_t num_cols) {
@@ -335,8 +335,8 @@ void InitFillWithScalarCompute(const nnvm::NodeAttrs &attrs,
 }
 
 struct PopulateFullIdxRspKernel : public mxnet_op::tunable {
-  template<typename IType>
-  MSHADOW_XINLINE static void Map(int i, IType* out) {
+  template<typename IndexType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, IType* out) {
     KERNEL_ASSIGN(out[i], kWriteTo, i);
   }
 };
@@ -452,9 +452,9 @@ void EyeFill(const nnvm::NodeAttrs& attrs,
 
 
 struct range_fwd {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, int repeat, DType start, DType step,
-                                  int req, DType* out) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, IndexType repeat, DType start, DType step,
+                                  IndexType req, DType* out) {
     KERNEL_ASSIGN(out[i], req, start + (i/repeat) * step);
   }
 };

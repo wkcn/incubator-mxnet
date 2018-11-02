@@ -58,8 +58,8 @@ namespace common {
  *           and end with value equal with size of indices.
  */
 struct csr_indptr_check {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const IType* indptr,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const IType* indptr,
                                   const nnvm::dim_t end, const nnvm::dim_t idx_size) {
     if (indptr[i+1] < 0 || indptr[i+1] < indptr[i] ||
         (i == 0 && indptr[i] != 0) ||
@@ -73,8 +73,8 @@ struct csr_indptr_check {
  *           and in ascending order per row.
  */
 struct csr_idx_check {
-  template<typename DType, typename IType, typename RType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const IType* idx,
+  template<typename IndexType, typename DType, typename IType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const IType* idx,
                                   const RType* indptr, const nnvm::dim_t ncols) {
     for (RType j = indptr[i]; j < indptr[i+1]; j++) {
       if (idx[j] >= ncols || idx[j] < 0 ||
@@ -91,8 +91,8 @@ struct csr_idx_check {
  *           less than the size of first dimension and in ascending order
  */
 struct rsp_idx_check {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const IType* idx,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const IType* idx,
                                   const nnvm::dim_t end, const nnvm::dim_t nrows) {
     if ((i < end && idx[i+1] <= idx[i])
         || idx[i] < 0 || idx[i] >= nrows)

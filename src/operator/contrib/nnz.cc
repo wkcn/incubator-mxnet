@@ -92,8 +92,8 @@ struct CsrNNZRowKernel {
    * \param out           ptr to output
    * \param indptr        ptr to source csr indptr
    */
-  template<typename IType, typename DType>
-  MSHADOW_XINLINE static void Map(int tid, DType* out, const IType* indptr) {
+  template<typename IndexType, typename IType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType tid, DType* out, const IType* indptr) {
     out[tid] = static_cast<DType>(indptr[tid + 1] - indptr[tid]);
   }
 };

@@ -69,8 +69,8 @@ inline bool RequantizeType(const nnvm::NodeAttrs& attrs,
 }
 
 struct RequantizeKernel {
-  template<typename T1, typename T2>
-  MSHADOW_XINLINE static void Map(int i, T2 *output, float *omin_range, float *omax_range,
+  template<typename IndexType, typename T1, typename T2>
+  MSHADOW_XINLINE static void Map(IndexType i, T2 *output, float *omin_range, float *omax_range,
       const T1 *input, const float *imin_range, const float *imax_range, const float real_range) {
     const float input_float = QuantizedToFloat<T1>(input[i], *imin_range, *imax_range);
     *omin_range = -real_range;
@@ -78,8 +78,8 @@ struct RequantizeKernel {
     output[i] = FloatToQuantized<T2>(input_float, -real_range, real_range);
   }
 
-  template<typename T1, typename T2>
-  MSHADOW_XINLINE static void Map(int i, T2 *output, float *omin_range, float *omax_range,
+  template<typename IndexType, typename T1, typename T2>
+  MSHADOW_XINLINE static void Map(IndexType i, T2 *output, float *omin_range, float *omax_range,
       const T1 *input, const float *imin_range, const float *imax_range,
       const float *actual_min, const float *actual_max) {
     Map(i, output, omin_range, omax_range, input, imin_range, imax_range,

@@ -65,8 +65,8 @@ struct SequenceReverseParam : public dmlc::Parameter<SequenceReverseParam> {
 };
 
 struct ReverseKernel {
-  template <typename DType>
-  MSHADOW_XINLINE static void Map(const int i, DType *const out_data,
+  template <typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(const IndexType i, DType *const out_data,
                                   const DType *const in_data,
                                   const OpReqType req,
                                   const index_t max_seq_len,

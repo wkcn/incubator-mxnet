@@ -38,8 +38,8 @@ namespace op {
 
 // keep zero-center
 struct quantized_flatten {
-  template<typename DstDType, typename SrcDType>
-  MSHADOW_XINLINE static void Map(int i, DstDType *out, float *omin_range,
+  template<typename IndexType, typename DstDType, typename SrcDType>
+  MSHADOW_XINLINE static void Map(IndexType i, DstDType *out, float *omin_range,
                                   float *omax_range, const SrcDType *in,
                                   const float *imin_range, const float *imax_range) {
     out[i] = in[i];

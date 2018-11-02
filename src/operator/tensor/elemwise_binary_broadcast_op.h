@@ -189,6 +189,7 @@ inline int BinaryBroadcastShapeCompact(const TShape& lshape, const TShape& rshap
 namespace mxnet_op {
 template<int ndim, typename DType, typename OP>
 struct binary_broadcast_kernel {
+                                   template <typename> IndexType
   /*! \brief Map function for binary_broadcast_kernel */
   MSHADOW_XINLINE static void Map(int base, int length, OpReqType req,
                                   const Shape <ndim> &lstride, const Shape <ndim> &rstride,
@@ -206,6 +207,7 @@ struct binary_broadcast_kernel {
       KERNEL_ASSIGN(out[base + i], req, OP::Map(lhs[lidx], rhs[ridx]));
     }
   }
+   template <typename> IndexType
 
   /*! \brief Map function for binary_broadcast_kernel */
   MSHADOW_XINLINE static void Map(int base, int length, OpReqType req,
@@ -235,6 +237,7 @@ struct csr_dns_csr_broadcast_kernel {
    * \param csr_indices  ptr to indices buffer of csr matrix
    * \param csr_indptr   ptr to indptr buffer of csr matrix
    * \param dns          ptr to data buffer of the dense vector
+   template <typename> IndexType
    * \param out          ptr to the data buffer of the result csr matrix
    */
   template<typename DType, typename CType, typename RType>
@@ -253,6 +256,7 @@ struct csr_dns_csr_broadcast_kernel {
    * \param i           global thread id
    * \param csr_data    ptr to data buffer of csr matrix
    * \param scalar_ptr  ptr to data buffer of the scalar tensor, only the 0-th element is used
+    template <typename> IndexType
    * \param out         ptr to the data buffer of output csr matrix
    * \param nnz         number of non-zero elements in input csr matrix
    */
@@ -264,6 +268,7 @@ struct csr_dns_csr_broadcast_kernel {
       KERNEL_ASSIGN(out[i], req, OP::Map(csr_data[i], scale));
     }
   }
+ template <typename> IndexType
 };
 
 template<int req, typename OP, bool reverse = false>

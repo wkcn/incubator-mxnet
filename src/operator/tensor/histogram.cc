@@ -27,9 +27,9 @@ namespace mxnet {
 namespace op {
 
 struct ComputeBinKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, const DType* in_data, const DType* bin_bounds,
-                                  int* bin_indices, int bin_cnt, double min, double max) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, const DType* in_data, const DType* bin_bounds,
+                                  IndexType* bin_indices, IndexType bin_cnt, double min, double max) {
     DType data = in_data[i];
     int target = -1;
     if (data >= min && data <= max) {
@@ -41,11 +41,11 @@ struct ComputeBinKernel {
     bin_indices[i] = target;
   }
 
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, const DType* in_data, int* bin_indices,
-                                   const DType* bin_bounds, int num_bins) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, const DType* in_data, IndexType* bin_indices,
+                                   const DType* bin_bounds, IndexType num_bins) {
     DType data = in_data[i];
-    int target = -1;
+    IndexType target = -1;
     if (data >= bin_bounds[0] && data <= bin_bounds[num_bins]) {
       target = 0;
       while ((data - bin_bounds[target]) >= 0) {

@@ -115,8 +115,8 @@ inline void CastStorageDnsRspImpl(const OpContext& ctx,
 
 // TODO(haibin) Use memcopy instead will be much faster than assigning each individual element
 struct CastStorageRspDnsKernel {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i,
                                   const nnvm::dim_t row_length,
                                   const IType* idx,
                                   const DType *data,
@@ -282,8 +282,8 @@ struct CopyCsrDataToDns {
    * \param csr_data  data blob of the csr tensor
    * \param num_cols  number of columns of the dns tensor
    */
-  template<typename DType, typename IType, typename CType>
-  MSHADOW_XINLINE static void Map(int i,
+  template<typename IndexType, typename DType, typename IType, typename CType>
+  MSHADOW_XINLINE static void Map(IndexType i,
                                   DType* dns_data,
                                   const CType* col_idx,
                                   const IType* indptr,

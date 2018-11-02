@@ -107,11 +107,11 @@ inline static void LaunchUniqueRNG(mshadow::Stream<cpu> *s,
 }
 
 struct UniqueSampleUniformKernel {
-  template<typename GType, typename DType>
-  MSHADOW_XINLINE static void Map(int tid, RandGenerator<cpu, GType> gen,
-                                  const int batch_size, const size_t num_sampled,
+  template<typename IndexType, typename GType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType tid, RandGenerator<cpu, GType> gen,
+                                  const IndexType batch_size, const size_t num_sampled,
                                   std::vector<std::unordered_set<DType>> *results,
-                                  const int step, const GType log_range_max,
+                                  const IndexType step, const GType log_range_max,
                                   DType *samples, DType *num_tries) {
     const int begin = tid * step;
     const int end = (tid + 1) * step;

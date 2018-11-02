@@ -92,8 +92,8 @@ Examples::
 
 
 struct SampleMultinomialBackwardCPUKernel {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, index_t K, index_t M,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t K, index_t M,
                                   DType* ograd, DType* dist, IType* out,
                                   DType* igrad) {
     for (index_t j = 0; j < M; ++j) {

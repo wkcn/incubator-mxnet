@@ -35,8 +35,8 @@ namespace op {
 namespace {
 
 struct CopyForShuffle {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, const DType* const in, DType* out,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, const DType* const in, DType* out,
                                   const index_t* indices, const index_t stride) {
     out[i] = in[indices[i / stride] * stride + i % stride];
   }

@@ -415,8 +415,8 @@ void ElemwiseBinaryOp::CsrCsrOp(mshadow::Stream<cpu> *s,
  */
 template<int req, typename OP>
 struct ElemwiseDnsCsrDnsKernel {
-  template<typename DType, typename IType, typename CType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, DType* dns_data,
+  template<typename IndexType, typename DType, typename IType, typename CType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, DType* dns_data,
                                   const DType* csr_data, const IType* csr_indices,
                                   const CType* csr_indptr, const nnvm::dim_t num_rows,
                                   const nnvm::dim_t num_cols) {
@@ -443,8 +443,8 @@ struct ElemwiseDnsCsrDnsKernel {
  */
 template<int req, typename OP>
 struct ElemwiseDnsCsrDnsWarpKernel {
-  template<typename DType, typename IType, typename CType>
-  MSHADOW_XINLINE static void Map(int tid, DType* out, DType* dns_data,
+  template<typename IndexType, typename DType, typename IType, typename CType>
+  MSHADOW_XINLINE static void Map(IndexType tid, DType* out, DType* dns_data,
                                   const DType* csr_data, const IType* csr_indices,
                                   const CType* csr_indptr, const nnvm::dim_t num_rows,
                                   const nnvm::dim_t num_cols) {
@@ -526,8 +526,8 @@ void ElemwiseBinaryOp::DnsCsrDnsOp(mshadow::Stream<cpu> *s,
  */
 template<int req, typename OP, bool reverse>
 struct ElemwiseDnsCsrCsrKernel {
-  template<typename DType, typename IType, typename CType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, DType* dns_data,
+  template<typename IndexType, typename DType, typename IType, typename CType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, DType* dns_data,
                                   const DType* csr_data, const IType* csr_indices,
                                   const CType* csr_indptr, const nnvm::dim_t num_rows,
                                   const nnvm::dim_t num_cols) {
@@ -611,8 +611,8 @@ void ElemwiseBinaryOp::DnsCsrCsrOp(const nnvm::NodeAttrs &attrs,
  */
 template<int req, typename OP>
 struct ElemwiseDnsRspDnsKernel {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, DType* dns_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, DType* dns_data,
                                   const DType* rsp_data, const IType* rsp_indices,
                                   const nnvm::dim_t num_rows, const nnvm::dim_t nz_rows,
                                   const nnvm::dim_t num_cols) {

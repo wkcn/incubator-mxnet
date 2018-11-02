@@ -145,7 +145,7 @@ inline bool DiagOpType(const nnvm::NodeAttrs& attrs,
 
 template<int ndim, int req, bool back>
 struct diag {
-  template<typename DType>
+  template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(index_t i, DType* out, const DType* a,
                                   mshadow::Shape<ndim> oshape,
                                   mshadow::Shape<ndim> ishape,
@@ -164,9 +164,9 @@ struct diag {
 
 template<int req, bool back>
 struct diag_gen {
-  template<typename DType>
+  template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(index_t i, DType* out, const DType* a,
-                                  mshadow::Shape<2> oshape, int k) {
+                                  mshadow::Shape<2> oshape, IndexType k) {
     using namespace mxnet_op;
 
     auto j = unravel(i, oshape);

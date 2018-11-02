@@ -103,8 +103,8 @@ inline bool QuadraticOpStorageType(const nnvm::NodeAttrs& attrs,
 
 template<int req>
 struct quadratic_forward {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* in_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* in_data,
                                   const float a, const float b, const float c) {
     KERNEL_ASSIGN(out_data[i], req, in_data[i] * (a * in_data[i] + b) + c);
   }
@@ -112,8 +112,8 @@ struct quadratic_forward {
 
 template<int req>
 struct quadratic_backward {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* in_grad, const DType* out_grad,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* in_grad, const DType* out_grad,
                                   const DType* in_data, const float a, const float b) {
     KERNEL_ASSIGN(in_grad[i], req, out_grad[i] * (2 * a * in_data[i] + b));
   }

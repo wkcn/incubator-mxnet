@@ -118,8 +118,8 @@ inline bool RegressionInferStorageType(const nnvm::NodeAttrs& attrs,
  */
 template<typename OP, int req>
 struct DnsCsrSparseKernel {
-  template<typename DType, typename IType, typename RType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data,
+  template<typename IndexType, typename DType, typename IType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data,
                                   const DType* dns_data,
                                   const DType* csr_data,
                                   const IType* csr_idx,

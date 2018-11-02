@@ -306,9 +306,9 @@ struct Take {
   // M is the number of columns of in_data and out_data
   // K is the number of rows of in_data
   // i is the index of out_data
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* in_data,
-                                  const IType* idx, const int M, const int K) {
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* in_data,
+                                  const IType* idx, const IndexType M, const IndexType K) {
     int j = static_cast<int>(idx[i/M]);
     if (clip) {
       if (j <= 0) j = 0;
@@ -332,12 +332,12 @@ struct Take {
    * \param axis_dim    dim size of the axis dimension
    * \param axis        axis id
    */
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* in_data, const IType* idx,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* in_data, const IType* idx,
                                   const mshadow::Shape<10> in_stride,
                                   const mshadow::Shape<10> out_stride,
-                                  const int in_ndims, const int out_ndims, const int idx_ndims,
-                                  const int axis_dim, const int axis) {
+                                  const IndexType in_ndims, const IndexType out_ndims, const IndexType idx_ndims,
+                                  const IndexType axis_dim, const IndexType axis) {
     // i is the global flattened index in the output
     const int out_head_index = (axis == 0) ? 0 : (i / out_stride[axis - 1]);
     const int out_rest_index = (axis == 0) ? i : (i % out_stride[axis - 1]);
@@ -396,8 +396,8 @@ struct TakeRspKernel {
    * \param row_length  number of elements per row
    * \param nnr         number of non-zero rows
    */
-  template<typename DType, typename IType, typename RType>
-  MSHADOW_XINLINE static void Map(int i,
+  template<typename IndexType, typename DType, typename IType, typename RType>
+  MSHADOW_XINLINE static void Map(IndexType i,
                                   const IType* data,
                                   DType* out,
                                   const RType* weight_idx,
@@ -532,8 +532,8 @@ void SparseEmbeddingOpForwardEx(const nnvm::NodeAttrs& attrs,
 /*! \brief cast to type and clip to range [0, K - 1]
  */
 struct tcast_clip {
-  template<typename OType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, OType* out_data, const IType* in_data,
+  template<typename IndexType, typename OType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, OType* out_data, const IType* in_data,
                                   const OType K) {
     OType j = static_cast<OType>(in_data[i]);
     if (j <= 0) j = 0;
@@ -902,12 +902,12 @@ struct TakeGradGeneralKernel {
    * \param axis_dim      dim size of the axis dimension
    * \param axis          axis id
    */
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int tid, DType* arr_grad, const DType* ograd,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType tid, DType* arr_grad, const DType* ograd,
                                   const IType* src_indptr, const IType* original_idx,
                                   mshadow::Shape<10> in_strides, mshadow::Shape<10> out_strides,
-                                  const int in_ndims, const int out_ndims, const int idx_ndims,
-                                  const int axis) {
+                                  const IndexType in_ndims, const IndexType out_ndims, const IndexType idx_ndims,
+                                  const IndexType axis) {
     const int in_head_index = (axis == 0) ? 0 : tid / in_strides[axis - 1];
     const int in_rest_index = (axis == 0) ? tid : tid % in_strides[axis - 1];
     const int in_mid_index = in_rest_index / in_strides[axis];
@@ -1193,9 +1193,9 @@ inline bool BatchTakeOpType(const nnvm::NodeAttrs& attrs,
 /*! \brief take scalar value from 2d data array */
 template<int req>
 struct batch_take {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const DType* a,
-                                  const int *idx, int M) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const DType* a,
+                                  const IndexType *idx, IndexType M) {
     int j = idx[i];
     if (j < 0) j = 0;
     else if (j >= M) j = M-1;
@@ -1299,9 +1299,9 @@ inline bool OneHotOpType(const nnvm::NodeAttrs& attrs,
 
 template<int req>
 struct one_hot {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, const IType* indices,
-                                  int depth, DType on_value) {
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, const IType* indices,
+                                  IndexType depth, DType on_value) {
     int offset = i * depth;
     int j = static_cast<int>(indices[i]);
     if (j >= 0 && j < depth) {
@@ -1386,8 +1386,8 @@ inline bool GatherNDType(const nnvm::NodeAttrs& attrs,
 }
 
 struct gather_nd {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, OpReqType req, int N, int M, int K,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, OpReqType req, IndexType N, IndexType M, IndexType K,
                                   const mshadow::Shape<10> strides,
                                   DType* out, const DType* data,
                                   const IType* indices) {
@@ -1489,8 +1489,8 @@ inline bool ScatterNDType(const nnvm::NodeAttrs& attrs,
 }
 
 struct scatter_nd {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, OpReqType req, int N, int M, int K,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, OpReqType req, IndexType N, IndexType M, IndexType K,
                                   const mshadow::Shape<10> strides,
                                   DType* out, const DType* data,
                                   const IType* indices) {

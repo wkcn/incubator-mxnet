@@ -48,8 +48,8 @@ struct DequantizeParam : public dmlc::Parameter<DequantizeParam> {
 
 // dequantize unsigned int8 to float32
 struct dequantize_unsigned {
-  template<typename DstDType, typename SrcDType>
-  MSHADOW_XINLINE static void Map(int i, DstDType *out, const SrcDType *in,
+  template<typename IndexType, typename DstDType, typename SrcDType>
+  MSHADOW_XINLINE static void Map(IndexType i, DstDType *out, const SrcDType *in,
                                   const float *imin_range, const float *imax_range,
                                   const float imin_limit, const float imax_limit) {
     const float scale = (*imax_range - *imin_range) / (imax_limit - imin_limit);
@@ -59,8 +59,8 @@ struct dequantize_unsigned {
 
 // keep zero-center
 struct dequantize_zero_centered {
-  template<typename DstDType, typename SrcDType>
-  MSHADOW_XINLINE static void Map(int i, DstDType *out, const SrcDType *in,
+  template<typename IndexType, typename DstDType, typename SrcDType>
+  MSHADOW_XINLINE static void Map(IndexType i, DstDType *out, const SrcDType *in,
                                   const float *imin_range, const float *imax_range,
                                   const float quantized_range) {
     const float real_range = MaxAbs(*imax_range, *imin_range);

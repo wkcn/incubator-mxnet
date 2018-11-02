@@ -84,8 +84,8 @@ struct SGDParam : public dmlc::Parameter<SGDParam> {
 
 
 struct SGDKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* weight_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* weight_data,
     const DType* grad_data, const DType param_clip_gradient,
     const DType param_lr, const DType param_wd, const DType param_rescale_grad,
     const OpReqType req) {
@@ -132,8 +132,8 @@ struct SGDDnsRspKernel<req, gpu> {
   // DType is the output data type
   // IType is row sparse idx type
   // i is the ith element in row sparse gradient
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, const index_t row_length, DType* out, const DType* weight,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, const index_t row_length, DType* out, const DType* weight,
                                   const IType* grad_idx, const DType *grad_val,
                                   const DType clip_gradient, const DType lr,
                                   const DType wd, const DType rescale_grad) {
@@ -160,8 +160,8 @@ struct SGDDnsRspKernel<req, cpu> {
   // DType is the output data type
   // IType is row sparse idx type
   // i is the ith row in row sparse gradient
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, const index_t row_length, DType* out, const DType* weight,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, const index_t row_length, DType* out, const DType* weight,
                                   const IType* grad_idx, const DType *grad_val,
                                   const DType clip_gradient, const DType lr,
                                   const DType wd, const DType rescale_grad) {
@@ -303,8 +303,8 @@ struct SGDMomParam : public dmlc::Parameter<SGDMomParam> {
 
 
 struct SGDMomKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, DType* mom_data, const DType* weight_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, DType* mom_data, const DType* weight_data,
     const DType* grad_data, const DType param_clip_gradient, const DType param_momentum,
     const DType param_lr, const DType param_wd, const DType param_rescale_grad,
     const OpReqType req) {
@@ -357,8 +357,8 @@ inline bool MP_SGD_InferType(const nnvm::NodeAttrs& attrs,
 }
 
 struct MP_SGDKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* weight_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* weight_data,
     const DType* grad_data, float* weight32, const float param_clip_gradient,
     const float param_lr, const float param_wd, const float param_rescale_grad,
     const OpReqType req) {
@@ -401,8 +401,8 @@ inline void MP_SGDUpdate(const nnvm::NodeAttrs& attrs,
 }
 
 struct MP_SGDMomKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, float* mom_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, float* mom_data,
     const DType* weight_data, const DType* grad_data, float* weight32,
     const float param_clip_gradient, const float param_momentum, const float param_lr,
     const float param_wd, const float param_rescale_grad, const OpReqType req) {
@@ -452,8 +452,8 @@ struct SGDMomDnsRspDnsKernel;
 
 template<int req>
 struct SGDMomDnsRspDnsKernel<req, cpu> {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, index_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t row_length, DType* out_data,
     DType* mom_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const DType clip_gradient, const DType momentum,
     const DType lr, const DType wd, const DType rescale_grad) {
@@ -479,8 +479,8 @@ struct SGDMomDnsRspDnsKernel<req, cpu> {
 
 template<int req>
 struct SGDMomDnsRspDnsKernel<req, gpu> {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, index_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t row_length, DType* out_data,
     DType* mom_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const DType clip_gradient, const DType momentum,
     const DType lr, const DType wd, const DType rescale_grad) {
@@ -751,8 +751,8 @@ struct FTMLParam : public dmlc::Parameter<FTMLParam> {
 
 
 struct FTMLKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out, DType* weight, DType* grad,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out, DType* weight, DType* grad,
     DType* d, DType* v, DType* z, const DType lr, const DType beta1,
     const DType beta2, const DType epsilon, const DType t,
     const DType wd, const DType rescale_grad, const DType clip_grad,
@@ -885,8 +885,8 @@ struct AdamDnsRspDnsKernel;
  */
 template<int req>
 struct AdamDnsRspDnsKernel<req, cpu> {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, const nnvm::dim_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, const nnvm::dim_t row_length, DType* out_data,
     DType* mean_data, DType* var_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const DType clip_gradient, const DType beta1, const DType beta2,
     const DType lr, const DType wd, const DType epsilon, const DType rescale_grad) {
@@ -918,8 +918,8 @@ struct AdamDnsRspDnsKernel<req, cpu> {
 
 template<int req>
 struct AdamDnsRspDnsKernel<req, gpu> {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, const nnvm::dim_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, const nnvm::dim_t row_length, DType* out_data,
     DType* mean_data, DType* var_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const DType clip_gradient, const DType beta1, const DType beta2,
     const DType lr, const DType wd, const DType epsilon, const DType rescale_grad) {
@@ -1365,8 +1365,8 @@ inline void FtrlUpdate(const nnvm::NodeAttrs& attrs,
 
 template<int req>
 struct FtrlDnsRspDnsKernel {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, const nnvm::dim_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, const nnvm::dim_t row_length, DType* out_data,
     DType* z_data, DType* n_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const DType clip_gradient, const DType lamda1, const DType beta,
     const DType lr, const DType wd, const DType rescale_grad) {
@@ -1523,8 +1523,8 @@ struct SignSGDParam : public dmlc::Parameter<SignSGDParam> {
 
 
 struct SignSGDKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, const DType* weight_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const DType* weight_data,
     const DType* grad_data, const DType param_clip_gradient,
     const DType param_lr, const DType param_wd, const DType param_rescale_grad,
     const OpReqType req) {
@@ -1591,8 +1591,8 @@ struct SignumParam : public dmlc::Parameter<SignumParam> {
 };
 
 struct SignumKernel {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, DType* out_data, DType* mom_data, const DType* weight_data,
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, DType* mom_data, const DType* weight_data,
     const DType* grad_data, const DType param_clip_gradient, const DType param_momentum,
     const DType param_lr, const DType param_wd, const DType param_rescale_grad,
     const DType param_wd_lh, const OpReqType req) {
@@ -1686,8 +1686,8 @@ struct AdagradDnsRspDnsKernel;
 
 template<>
 struct AdagradDnsRspDnsKernel<cpu> {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, index_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t row_length, DType* out_data,
     DType* state_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const DType clip_gradient, const DType epsilon,
     const DType lr, const DType rescale_grad) {
@@ -1713,8 +1713,8 @@ struct AdagradDnsRspDnsKernel<cpu> {
 
 template<>
 struct AdagradDnsRspDnsKernel<gpu> {
-  template<typename DType, typename IType>
-  MSHADOW_XINLINE static void Map(int i, index_t row_length, DType* out_data,
+  template<typename IndexType, typename DType, typename IType>
+  MSHADOW_XINLINE static void Map(IndexType i, index_t row_length, DType* out_data,
     DType* state_data, const DType* weight_data, const IType* grad_idx,
     const DType* grad_data, const DType clip_gradient, const DType epsilon,
     const DType lr, const DType rescale_grad) {

@@ -68,8 +68,8 @@ struct SequenceMaskParam : public dmlc::Parameter<SequenceMaskParam> {
 // (seqlen, batch, rest) case
 template <int req>
 struct SequenceMask0Kernel {
-  template <typename DType>
-  MSHADOW_XINLINE static void Map(int b, DType *in, const DType *idx,
+  template <typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType b, DType *in, const DType *idx,
                                   index_t max_s_len, index_t batch_size,
                                   index_t restsize, DType value) {
     const index_t seqpos = static_cast<int>(idx[b]);
@@ -86,8 +86,8 @@ struct SequenceMask0Kernel {
 // (batch, seqlen, rest) case
 template <int req>
 struct SequenceMask1Kernel {
-  template <typename DType>
-  MSHADOW_XINLINE static void Map(int b, DType *in, const DType *idx,
+  template <typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType b, DType *in, const DType *idx,
                                   index_t max_s_len, index_t batch_size,
                                   index_t restsize, DType value) {
     const index_t seqpos = static_cast<int>(idx[b]);

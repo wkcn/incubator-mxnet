@@ -94,8 +94,8 @@ MXNET_UNARY_MATH_OP_NC(identity, a);
 MXNET_UNARY_MATH_OP(identity_grad, 1);
 
 struct identity_with_cast {
-  template<typename DTypeIn, typename DTypeOut>
-  MSHADOW_XINLINE static void Map(int i, DTypeOut *out, DTypeIn *in) {
+  template<typename IndexType, typename DTypeIn, typename DTypeOut>
+  MSHADOW_XINLINE static void Map(IndexType i, DTypeOut *out, DTypeIn *in) {
     out[i] = DTypeOut(in[i]);
   }
 };

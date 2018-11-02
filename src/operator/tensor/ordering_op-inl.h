@@ -178,16 +178,16 @@ using namespace mshadow;
 
 
 struct fill_ind_to_one {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, const int* indices, DType* out) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, const IndexType* indices, DType* out) {
     out[indices[i]] = static_cast<DType>(1);
   }
 };
 
 struct fill_ind {
-  template<typename DType>
-  MSHADOW_XINLINE static void Map(int i, const int* indices, const DType* val,
-                                  int req, DType* out) {
+  template<typename IndexType, typename DType>
+  MSHADOW_XINLINE static void Map(IndexType i, const IndexType* indices, const DType* val,
+                                  IndexType req, DType* out) {
     KERNEL_ASSIGN(out[indices[i]], req, val[i]);
   }
 };
