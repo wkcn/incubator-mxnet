@@ -494,7 +494,7 @@ inline int GetExecNumMatchColor() {
 template<typename T, typename V>
 V ParallelAccumulate(const T* a, const int n, V start) {
   V sum = start;
-#pragma omp parallel for reduction(+:sum)
+_Pragma("omp parallel for reduction(+:sum)")
   for (int i = 0; i < n; ++i) {
     sum += a[i];
   }

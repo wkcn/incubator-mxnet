@@ -108,7 +108,7 @@ struct SquareSumRspKernel<req, 0, false> {
    */
   template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType j, DType* out_data, const DType* in_data,
-                                  const IndexType64_t nnr, const IndexType64_t num_cols) {
+                                  const int64_t nnr, const int64_t num_cols) {
     DType sum, residual;
     mshadow::red::sum::SetInitValue(sum, residual);
     for (int64_t i = 0; i < nnr; ++i) {
@@ -129,7 +129,7 @@ struct SquareSumRspKernel<req, 1, false> {
    */
   template<typename IndexType, typename IType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, DType* out_data, const IType* in_row_idx,
-                                  const DType* in_data, const IndexType64_t num_cols) {
+                                  const DType* in_data, const int64_t num_cols) {
     DType sum, residual;
     mshadow::red::sum::SetInitValue(sum, residual);
     const int64_t offset = i * num_cols;
@@ -152,7 +152,7 @@ struct SquareSumRspKernel<req, 1, true> {
   template<typename IndexType, typename IType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, IType* out_row_idx, DType* out_data,
                                   const IType* in_row_idx, const DType* in_data,
-                                  const IndexType64_t num_cols) {
+                                  const int64_t num_cols) {
     DType sum, residual;
     mshadow::red::sum::SetInitValue(sum, residual);
     out_row_idx[i] = in_row_idx[i];
@@ -181,7 +181,7 @@ struct SquareSumRspGradKernel<req, 0> {
   template<typename IndexType, typename IType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, IType* in_grad_row_idx, DType* in_grad,
                                   const DType* out_grad, const IType* in_row_idx,
-                                  const DType* in_data, const IndexType64_t num_cols) {
+                                  const DType* in_data, const int64_t num_cols) {
     const int64_t row = i / num_cols;
     in_grad_row_idx[row] = in_row_idx[row];
     KERNEL_ASSIGN(in_grad[i], req, 2*in_data[i]*out_grad[i%num_cols]);
@@ -201,7 +201,7 @@ struct SquareSumRspGradKernel<req, 1> {
   template<typename IndexType, typename IType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, IType* in_grad_row_idx, DType* in_grad,
                                   const DType* out_grad, const IType* in_row_idx,
-                                  const DType* in_data, const IndexType64_t num_cols) {
+                                  const DType* in_data, const int64_t num_cols) {
     const int64_t row = i / num_cols;
     in_grad_row_idx[row] = in_row_idx[row];
     KERNEL_ASSIGN(in_grad[i], req, 2*in_data[i]*out_grad[in_row_idx[row]]);
@@ -225,7 +225,7 @@ struct SquareSumRspGradKernel<req, 1, kRowSparseStorage, false> {
   template<typename IndexType, typename IType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, IType* in_grad_row_idx, DType* in_grad,
                                   const IType* out_grad_row_idx, const DType* out_grad,
-                                  const DType* in_data, const IndexType64_t num_cols) {
+                                  const DType* in_data, const int64_t num_cols) {
     const int64_t row = i / num_cols;
     in_grad_row_idx[row] = out_grad_row_idx[row];
     KERNEL_ASSIGN(in_grad[i], req, 2 * in_data[i] * out_grad[row]);
@@ -249,7 +249,7 @@ struct SquareSumRspGradKernel<req, 1, kRowSparseStorage, true> {
   template<typename IndexType, typename IType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, IType* in_grad_row_idx, DType* in_grad,
                                   const IType* out_grad_row_idx, const DType* out_grad,
-                                  const DType* in_data, const IndexType64_t num_cols) {
+                                  const DType* in_data, const int64_t num_cols) {
     const int64_t row = i / num_cols;
     const int64_t row_dns = out_grad_row_idx[row];
     in_grad_row_idx[row] = row_dns;
@@ -353,7 +353,7 @@ void SquareSumRspImpl(const nnvm::NodeAttrs& attrs,
 struct CheckSameIdxKernel {
   template<typename IndexType, typename IType>
   MSHADOW_XINLINE static void Map(IndexType i, IType* ograd_idx,
-                                  IType* in_idx, IndexType32_t* is_diff) {
+                                  IType* in_idx, int32_t* is_diff) {
     if (ograd_idx[i] != in_idx[i]){
       *is_diff = 1;
     }

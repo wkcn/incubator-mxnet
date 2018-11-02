@@ -243,7 +243,7 @@ MSHADOW_XINLINE DType BoxArea(const DType *box, int encode) {
 struct compute_area {
   template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, DType *out, const DType *in,
-                                  const IndexType32_t *indices, const IndexType32_t *batch_start,
+                                  const int32_t *indices, const int32_t *batch_start,
                                   IndexType topk, IndexType num_elem, IndexType stride, IndexType encode) {
     int b = i / topk;
     int k = i % topk;
@@ -302,7 +302,7 @@ MSHADOW_XINLINE DType Intersect(const DType *a, const DType *b, int encode) {
    */
 struct nms_impl {
   template<typename IndexType, typename DType>
-  MSHADOW_XINLINE static void Map(IndexType i, IndexType32_t *index, const IndexType32_t *batch_start,
+  MSHADOW_XINLINE static void Map(IndexType i, int32_t *index, const int32_t *batch_start,
                                   const DType *input, const DType *areas,
                                   IndexType k, IndexType ref, IndexType num,
                                   IndexType stride, IndexType offset_box, IndexType offset_id,
@@ -348,7 +348,7 @@ struct nms_impl {
 struct nms_assign {
   template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, DType *out, DType *record, const DType *input,
-                                  const IndexType32_t *index, const IndexType32_t *batch_start,
+                                  const int32_t *index, const int32_t *batch_start,
                                   IndexType k, IndexType num, IndexType stride) {
     int count = 0;
     for (int j = 0; j < k; ++j) {
@@ -728,7 +728,7 @@ inline bool MatchingShape(const nnvm::NodeAttrs& attrs,
 struct bipartite_matching {
   template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, DType *row_marker, DType *col_marker,
-                                  const DType *scores, const IndexType32_t *sorted_index,
+                                  const DType *scores, const int32_t *sorted_index,
                                   IndexType num_batch, IndexType num_row, IndexType num_col,
                                   float threshold, bool is_ascend, IndexType topk) {
     int stride = num_row * num_col;

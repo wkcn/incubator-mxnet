@@ -38,6 +38,20 @@
 #include "../common/cuda_utils.h"
 #endif  // __CUDACC__
 
+#define KERNEL_LAUNCH_TYPE_SWITCH(N, ...) \
+  do {                                    \
+  if (N <= INT32_MAX)                     \
+    {                                     \
+      typedef int32_t IndexType;          \
+      {__VA_ARGS__}                       \
+    }                                     \
+  else                                    \
+    {                                     \
+      typedef int64_t IndexType;          \
+      {__VA_ARGS__}                       \
+    }                                     \
+  } while(0)
+
 namespace mxnet {
 namespace op {
 namespace mxnet_op {
@@ -58,18 +72,6 @@ int get_num_threads(const int N);
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; \
       i < (n); \
       i += blockDim.x * gridDim.x)
-
-#define KERNEL_LAUNCH_TYPE_SWITCH(N, ...) \
-  if (N <= INT32_MAX)                     \
-    {                                     \
-      typedef int32_t IndexType;          \
-      {__VA_ARGS__}                       \
-    }                                     \
-  else                                    \
-    {                                     \
-      typedef int64_t IndexType;          \
-      {__VA_ARGS__}                       \
-    }
 
 inline cudaDeviceProp cuda_get_device_prop() {
   int device;
@@ -520,17 +522,17 @@ struct Kernel<OP, cpu> {
 #ifdef _OPENMP
     const IndexType omp_threads = engine::OpenMP::Get()->GetRecommendedOMPThreadCount();
     if (omp_threads < 2) {
-      for (IndexType i = 0; i < N; ++i) {
+      for (IndexType i = 0; i < static_cast<IndexType>(N); ++i) {
         OP::Map(i, args...);
       }
     } else {
-      #pragma omp parallel for num_threads(omp_threads)
-      for (IndexType i = 0; i < N; ++i) {
+      _Pragma("omp parallel for num_threads(omp_threads)")
+      for (IndexType i = 0; i < static_cast<IndexType>(N); ++i) {
         OP::Map(i, args...);
       }
     }
 #else
-    for (IndexType i = 0; i < N; ++i) {
+    for (IndexType i = 0; i < static_cast<IndexType>(N); ++i) {
       OP::Map(i, args...);
     }
 #endif
@@ -556,21 +558,21 @@ struct Kernel<OP, cpu> {
     const IndexType omp_threads = engine::OpenMP::Get()->GetRecommendedOMPThreadCount();
     if (omp_threads < 2 || !tuned_op<PRIMITIVE_OP, DType>::UseOMP(
       static_cast<size_t>(N), static_cast<size_t>(omp_threads))) {
-      for (IndexType i = 0; i < N; ++i) {
+      for (IndexType i = 0; i < static_cast<IndexType>(N); ++i) {
         OP::Map(i, args...);
       }
     } else {
-      #pragma omp parallel for num_threads(omp_threads)
-      for (IndexType i = 0; i < N; ++i) {
+      _Pragma("omp parallel for num_threads(omp_threads)")
+      for (IndexType i = 0; i < static_cast<IndexType>(N); ++i) {
         OP::Map(i, args...);
       }
     }
 #else
-    for (IndexType i = 0; i < N; ++i) {
+    for (IndexType i = 0; i < static_cast<IndexType>(N); ++i) {
       OP::Map(i, args...);
     }
-    });
 #endif
+    });
   }
 
   /*!
@@ -584,18 +586,19 @@ struct Kernel<OP, cpu> {
   inline static void LaunchEx(mshadow::Stream<cpu> *s, const size_t N, Args... args) {
     KERNEL_LAUNCH_TYPE_SWITCH(N, {
 #ifdef _OPENMP
-    const IndexType omp_threads = engine::OpenMP::Get()->GetRecommendedOMPThreadCount();
+    const size_t omp_threads = engine::OpenMP::Get()->GetRecommendedOMPThreadCount();
     if (omp_threads < 2) {
-      OP::Map(0, N, args...);
+      OP::Map(0, static_cast<IndexType>(N), args...);
     } else {
       const IndexType length = (N + omp_threads - 1) / omp_threads;
-      #pragma omp parallel for num_threads(omp_threads)
-      for (IndexType i = 0; i < N; i += length) {
-        OP::Map(i, i + length > N ? N - i : length, args...);
+      _Pragma("omp parallel for num_threads(omp_threads)")
+      for (IndexType i = 0; i < static_cast<IndexType>(N); i += length) {
+        OP::Map(i, i + length > static_cast<IndexType>(N) ?
+                static_cast<IndexType>(N) - i : length, args...);
       }
     }
 #else
-    OP::Map(0, N, args...);
+    OP::Map(0, static_cast<IndexType>(N), args...);
 #endif
     });
   }
@@ -640,16 +643,18 @@ struct Kernel<OP, cpu> {
 
 
 #ifdef __CUDACC__
-template<typename OP, typename ...Args>
+template<typename OP, typename IndexType, typename ...Args>
 __global__ void mxnet_generic_kernel(int N, Args... args) {
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
+  for (IndexType i = blockIdx.x * blockDim.x + threadIdx.x;
+      i < static_cast<IndexType>(N); i += blockDim.x * gridDim.x) {
     OP::Map(i, args...);
   }
 }
 
-template<typename OP, typename ...Args>
+template<typename OP, typename IndexType, typename ...Args>
 __global__ void mxnet_generic_kernel_ex(int N, Args... args) {
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
+  for (IndexType i = blockIdx.x * blockDim.x + threadIdx.x;
+      i < static_cast<IndexType>(N); i += blockDim.x * gridDim.x) {
     OP::Map(i, 1, args...);
   }
 }
@@ -662,7 +667,7 @@ struct Kernel<OP, gpu> {
     KERNEL_LAUNCH_TYPE_SWITCH(N, {
     using namespace mshadow::cuda;
     IndexType ngrid = std::min(kMaxGridNum, (N + kBaseThreadNum - 1) / kBaseThreadNum);
-    mxnet_generic_kernel<OP, Args...>
+    mxnet_generic_kernel<OP, IndexType, Args...>
       <<<ngrid, kBaseThreadNum, 0, mshadow::Stream<gpu>::GetStream(s)>>>(
         N, args...);
     MSHADOW_CUDA_POST_KERNEL_CHECK(mxnet_generic_kernel);
@@ -674,7 +679,7 @@ struct Kernel<OP, gpu> {
     KERNEL_LAUNCH_TYPE_SWITCH(N, {
     using namespace mshadow::cuda;
     IndexType ngrid = std::min(kMaxGridNum, (N + kBaseThreadNum - 1) / kBaseThreadNum);
-    mxnet_generic_kernel_ex<OP, Args...>
+    mxnet_generic_kernel_ex<OP, IndexType, Args...>
       <<<ngrid, kBaseThreadNum, 0, mshadow::Stream<gpu>::GetStream(s)>>>(
         N, args...);
     MSHADOW_CUDA_POST_KERNEL_CHECK(mxnet_generic_kernel_ex);

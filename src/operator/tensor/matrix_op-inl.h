@@ -2316,8 +2316,8 @@ template<int req>
 struct compute_offset_for_depth_to_space {
   template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, DType* offset_arr, DType* size, const IndexType block,
-                                  const IndexType32_t size0, const IndexType32_t size1, const IndexType32_t size2,
-                                  const IndexType32_t size3) {
+                                  const int32_t size0, const int32_t size1, const int32_t size2,
+                                  const int32_t size3) {
     size[0] = size0;
     size[1] = size1;
     size[2] = size2;
@@ -2467,8 +2467,8 @@ template<int req>
 struct compute_offset_for_space_to_depth {
   template<typename IndexType, typename DType>
   MSHADOW_XINLINE static void Map(IndexType i, DType* offset_arr, DType* size, const IndexType block,
-                                  const IndexType32_t size0, const IndexType32_t size1,
-                                  const IndexType32_t size2, const IndexType32_t size3) {
+                                  const int32_t size0, const int32_t size1,
+                                  const int32_t size2, const int32_t size3) {
     size[0] = size0;
     size[1] = size1;
     size[2] = size2;

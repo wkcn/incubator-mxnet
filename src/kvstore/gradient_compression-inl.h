@@ -37,7 +37,6 @@ void Quantize2BitImpl(mshadow::Stream<mshadow::gpu> *s, const std::vector<mxnet:
 void Dequantize2BitImpl(mshadow::Stream<mshadow::gpu> *s, const std::vector<mxnet::TBlob> &inputs,
                         const float threshold);
 
-                                   template <typename> IndexType
 struct quantize_2bit {
   MSHADOW_XINLINE static void Map(int out_block_id,
                                   int original_size,
