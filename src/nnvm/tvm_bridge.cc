@@ -38,6 +38,7 @@
 #include <mxnet/c_api.h>
 #include <mxnet/ndarray.h>
 #include <mxnet/engine.h>
+#include "../c_api/c_api_common.h"
 
 #include <memory>
 
@@ -46,6 +47,15 @@ namespace mxnet {
 using tvm::runtime::PackedFunc;
 using tvm::runtime::TVMArgs;
 using tvm::runtime::TVMRetValue;
+
+struct TVMRuntimeEntry {
+  std::string ret_str;
+  std::string last_error;
+  TVMByteArray ret_bytes;
+};
+
+typedef dmlc::ThreadLocalStore<TVMRuntimeEntry> TVMAPIRuntimeStore;
+
 
 /*!
  * \brief Async functor object
@@ -167,6 +177,72 @@ void WrapAsyncCall(TVMArgs wrap_args, TVMRetValue* wrap_rv) {
   *wrap_rv = PackedFunc(wrapped);
 }
 
+
+void _TVMFuncCall(TVMFunctionHandle func,
+                TVMValue* args,
+                int* arg_type_codes,
+                int num_args,
+                TVMValue* ret_val,
+                int* ret_type_code) {
+  TVMRetValue rv;
+  (*static_cast<const PackedFunc*>(func)).CallPacked(
+      TVMArgs(args, arg_type_codes, num_args), &rv);
+  // handle return string.
+  if (rv.type_code() == kStr ||
+     rv.type_code() == kTVMType ||
+      rv.type_code() == kBytes) {
+    TVMRuntimeEntry* e = TVMAPIRuntimeStore::Get();
+    if (rv.type_code() != kTVMType) {
+      e->ret_str = *rv.ptr<std::string>();
+    } else {
+      e->ret_str = rv.operator std::string();
+    }
+    if (rv.type_code() == kBytes) {
+      e->ret_bytes.data = e->ret_str.c_str();
+      e->ret_bytes.size = e->ret_str.length();
+      *ret_type_code = kBytes;
+      ret_val->v_handle = &(e->ret_bytes);
+    } else {
+      *ret_type_code = kStr;
+      ret_val->v_str = e->ret_str.c_str();
+    }
+  } else {
+    rv.MoveToCHost(ret_val, ret_type_code);
+  }
+}
+
+
+void _TVMFuncCreateFromCFunc(TVMPackedCFunc func,
+                           void* resource_handle,
+                           TVMPackedCFuncFinalizer fin,
+                           TVMFunctionHandle *out) {
+  if (fin == nullptr) {
+    *out = new PackedFunc(
+        [func, resource_handle](TVMArgs args, TVMRetValue* rv) {
+          int ret = func((TVMValue*)args.values, (int*)args.type_codes, // NOLINT(*)
+                         args.num_args, rv, resource_handle);
+          if (ret != 0) {
+            std::string err = "TVMCall CFunc Error:\n";
+            err += MXGetLastError();
+            throw dmlc::Error(err);
+          }
+        });
+  } else {
+    // wrap it in a shared_ptr, with fin as deleter.
+    // so fin will be called when the lambda went out of scope.
+    std::shared_ptr<void> rpack(resource_handle, fin);
+    *out = new PackedFunc(
+        [func, rpack](TVMArgs args, TVMRetValue* rv) {
+          int ret = func((TVMValue*)args.values, (int*)args.type_codes, // NOLINT(*)
+                         args.num_args, rv, rpack.get());
+          if (ret != 0) {
+            std::string err = "TVMCall CFunc Error:\n";
+            err += MXGetLastError();
+            throw dmlc::Error(err);
+          }
+      });
+  }
+}
 }  // namespace mxnet
 
 // C callback that can be used by TVM to extract
@@ -177,4 +253,26 @@ extern "C" MXNET_DLL int MXTVMBridge(TVMFunctionHandle pregister) {
       *static_cast<PackedFunc*>(pregister);
   fregister("WrapAsyncCall", PackedFunc(mxnet::WrapAsyncCall));
   return 0;
+}
+
+
+extern "C" MXNET_DLL int MXTVMFuncCall(TVMFunctionHandle func,
+                TVMValue* args,
+                int* arg_type_codes,
+                int num_args,
+                TVMValue* ret_val,
+                int* ret_type_code) {
+  API_BEGIN();
+  _TVMFuncCall(func, args, arg_type_codes, num_args, ret_val, ret_type_code);
+  API_END();
+}
+
+
+extern "C" MXNET_DLL int MXTVMFuncCreateFromCFunc(TVMPackedCFunc func,
+                           void* resource_handle,
+                           TVMPackedCFuncFinalizer fin,
+                           TVMFunctionHandle *out) {
+  API_BEGIN();
+  _TVMFuncCreateFromCFunc(func, resource_handle, fin, out);
+  API_END();
 }
