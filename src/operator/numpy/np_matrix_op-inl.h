@@ -148,9 +148,9 @@ void NumpyTranspose(const nnvm::NodeAttrs& attrs,
     }
   }
   if (req[0] == kAddTo) {
-    TransposeImpl<xpu, true>(ctx.run_ctx, inputs[0], outputs[0], axes);
+    TransposeImpl<xpu, true>(ctx, inputs[0], outputs[0], axes);
   } else {
-    TransposeImpl<xpu, false>(ctx.run_ctx, inputs[0], outputs[0], axes);
+    TransposeImpl<xpu, false>(ctx, inputs[0], outputs[0], axes);
   }
 }
 
@@ -765,7 +765,7 @@ void NumpyMoveaxisCompute(const nnvm::NodeAttrs& attrs,
   mxnet::TShape axes;
   axes = NumpyMoveaxisShapeImpl(attrs, inputs[0].ndim());
   MSHADOW_TYPE_SWITCH(outputs[0].type_flag_, Dtype, {
-    TransposeImpl<xpu>(ctx.run_ctx, inputs[0], outputs[0], axes);
+    TransposeImpl<xpu>(ctx, inputs[0], outputs[0], axes);
   })
 }
 
@@ -784,7 +784,7 @@ void NumpyRollaxisCompute(const nnvm::NodeAttrs& attrs,
   const NumpyRollaxisParam& param = nnvm::get<NumpyRollaxisParam>(attrs.parsed);
   axes = NumpyRollaxisShapeImpl(param.axis, param.start, inputs[0].ndim());
   MSHADOW_TYPE_SWITCH(outputs[0].type_flag_, Dtype, {
-    TransposeImpl<xpu>(ctx.run_ctx, inputs[0], outputs[0], axes);
+    TransposeImpl<xpu>(ctx, inputs[0], outputs[0], axes);
   })
 }
 
@@ -822,7 +822,7 @@ void NumpyRollaxisBackward(const nnvm::NodeAttrs &attrs,
   mxnet::TShape axes;
   axes = NumpyRollaxisShapeImpl(axis, start, inputs[0].ndim());
   MSHADOW_TYPE_SWITCH(outputs[0].type_flag_, Dtype, {
-    TransposeImpl<xpu>(ctx.run_ctx, inputs[0], outputs[0], axes);
+    TransposeImpl<xpu>(ctx, inputs[0], outputs[0], axes);
   })
 }
 
@@ -967,7 +967,7 @@ void NumpyRot90ComputeFlipTransposeIml(const OpContext& ctx,
     Kernel<rot90Transreverse, xpu>::Launch(s, inputs[0].Size(), inputs[0].dptr<DType>(),
                                            mid_data.dptr<DType>(),
                                            stride_, trailing_);
-    mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, mid_data, outputs[0], axes_list);
+    mxnet::op::TransposeImpl<xpu>(ctx, mid_data, outputs[0], axes_list);
   });
 }
 
@@ -991,7 +991,7 @@ void NumpyRot90ComputeTransposeFlipIml(const OpContext& ctx,
     DType* data_ptr = reinterpret_cast<DType*>(workspace.dptr_);
     mxnet::TShape mid_shape(outputs[0].shape_);
     TBlob mid_data = TBlob(data_ptr, mid_shape, xpu::kDevMask);
-    mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, inputs[0], mid_data, axes_list);
+    mxnet::op::TransposeImpl<xpu>(ctx, inputs[0], mid_data, axes_list);
 
     index_t stride_;
     index_t trailing_;

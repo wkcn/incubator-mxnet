@@ -519,14 +519,14 @@ void NumpyMatrixNormCompute(const nnvm::NodeAttrs& attrs,
                      temp.dev_mask(), temp.dev_id());
     TBlob svd_workspace(reinterpret_cast<DType*>(temp.dptr_) + offset, TShape(1, svd_space),
                         temp.dev_mask(), temp.dev_id());
-    TransposeImpl<xpu>(ctx.run_ctx, inputs[0], workspace, axes);
+    TransposeImpl<xpu>(ctx, inputs[0], workspace, axes);
     Tensor<xpu, 3, DType> svd_input =
       workspace.get_with_shape<xpu, 3, DType>(Shape3(batch_dim, row_dim, col_dim), s);
     gesvd::op(svd_input, UT, L, V, ctx, attrs, &svd_workspace);
 
     TBlob workspace0(reinterpret_cast<DType*>(temp.dptr_), L_trans,
                      temp.dev_mask(), temp.dev_id());
-    TransposeImpl<xpu>(ctx.run_ctx, TBlob(L).reshape(L_shape), workspace0, reduce_axes);
+    TransposeImpl<xpu>(ctx, TBlob(L).reshape(L_shape), workspace0, reduce_axes);
     std::vector<TBlob> eigen({ workspace0 });
     if (param.flag == 2) {  // nuclear norm
       ReduceAxesComputeImpl<xpu, mshadow::red::sum, false, false, mshadow_op::identity>(
@@ -718,7 +718,7 @@ void NumpyMatrixNormGradCompute(const nnvm::NodeAttrs& attrs,
                      workspace.dev_mask(), workspace.dev_id());
     TBlob temp(reinterpret_cast<DType*>(workspace.dptr_) + workspace_offset4, inputs[3].shape_,
                      workspace.dev_mask(), workspace.dev_id());
-    TransposeImpl<xpu>(ctx.run_ctx, L_irreduced.reshape(L_shape), workspace0, reduce_axes);
+    TransposeImpl<xpu>(ctx, L_irreduced.reshape(L_shape), workspace0, reduce_axes);
     map_inputs.push_back(workspace0);
     map_inputs.push_back(L_reduced);
     if (param.flag == 2) {  // nuclear norm
@@ -743,17 +743,17 @@ void NumpyMatrixNormGradCompute(const nnvm::NodeAttrs& attrs,
     TBlob in_grad_trans(reinterpret_cast<DType*>(workspace0.dptr_),
                         swapMatDims(inputs[0].shape_, mat_axis),
                         workspace.dev_mask(), workspace.dev_id());
-    TransposeImpl<xpu>(ctx.run_ctx, inputs[0], in_grad_trans, axes);
+    TransposeImpl<xpu>(ctx, inputs[0], in_grad_trans, axes);
     Tensor<xpu, 3, DType> trans_in_grad = in_grad_trans.FlatToKD<xpu, 3, DType>(s);
     temp_flat = temp_flat * broadcast_to(trans_in_grad, temp.shape_);
     if (req[0] == kAddTo) {
       TBlob ograd(reinterpret_cast<DType*>(tempM.dptr_), outputs[0].shape_,
                   workspace.dev_mask(), workspace.dev_id());
-      TransposeImpl<xpu>(ctx.run_ctx, temp.reshape(svd_in_shape), ograd, reduce_axes);
+      TransposeImpl<xpu>(ctx, temp.reshape(svd_in_shape), ograd, reduce_axes);
       Tensor<xpu, 1, DType> out = outputs[0].FlatTo1D<xpu, DType>(s);
       out += ograd.FlatTo1D<xpu, DType>(s);
     } else {
-      TransposeImpl<xpu>(ctx.run_ctx, temp.reshape(svd_in_shape), outputs[0], reduce_axes);
+      TransposeImpl<xpu>(ctx, temp.reshape(svd_in_shape), outputs[0], reduce_axes);
     }
   });
   if (!param.keepdims) {

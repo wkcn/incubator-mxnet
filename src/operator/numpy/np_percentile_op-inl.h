@@ -274,7 +274,7 @@ void NumpyPercentileForward(const nnvm::NodeAttrs& attrs,
     workspace_curr_ptr += 2 * temp_data_size + idx_size;
 
     TBlob a_trans = TBlob(trans_ptr, t_shape_ex, xpu::kDevMask);
-    TransposeImpl<xpu>(ctx.run_ctx, data, a_trans, t_axes);
+    TransposeImpl<xpu>(ctx, data, a_trans, t_axes);
     TBlob a_sort = TBlob(sort_ptr, t_shape, xpu::kDevMask);
     TBlob a_idx = TBlob(idx_ptr, t_shape, xpu::kDevMask);
     std::vector<OpReqType> req_TopK = {kWriteTo, kNullOp};

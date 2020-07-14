@@ -134,8 +134,8 @@ class QuantizedCuDNNConvOp {
 
       // input:  [NCHW] => [NHWC](batch, in_height, in_width, in_channels)
       // filter: [NCHW] => [NHWC](out_channels, filter_height, filter_width, in_channels)
-      TransposeImpl<gpu>(ctx.run_ctx, data,   data_,   mxnet::TShape({N, H, W, C}));
-      TransposeImpl<gpu>(ctx.run_ctx, filter, filter_, mxnet::TShape({N, H, W, C}));
+      TransposeImpl<gpu>(ctx, data,   data_,   mxnet::TShape({N, H, W, C}));
+      TransposeImpl<gpu>(ctx, filter, filter_, mxnet::TShape({N, H, W, C}));
       TBlob out_(reinterpret_cast<DstType*>(temp_dptr),
                  mxnet::TShape({oshape[N], oshape[H], oshape[W], oshape[C]}),
                  dev_mask, DataType<DstType>::kFlag, dev_id);
@@ -166,7 +166,7 @@ class QuantizedCuDNNConvOp {
       Tensor<gpu, 1, int32_t> out_tcast_tensor = out_tcast.FlatTo1D<gpu, int32_t>(s);
       Assign(out_tcast_tensor, kWriteTo, mshadow::expr::tcast<int32_t>(out_tensor));
       // output: [NHWC](batch, out_height, out_width, out_channels) => [NCHW]
-      TransposeImpl<gpu>(ctx.run_ctx, out_tcast, out, mxnet::TShape({0, 3, 1, 2}));
+      TransposeImpl<gpu>(ctx, out_tcast, out, mxnet::TShape({0, 3, 1, 2}));
     } else {
       LOG(FATAL) << "quantized_conv only supports NCHW for now";
     }

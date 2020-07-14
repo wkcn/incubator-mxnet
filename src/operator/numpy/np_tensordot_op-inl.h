@@ -278,9 +278,9 @@ void TensordotImpl(const Tuple<int>& a_axes_summed,
       TBlob a_res = TBlob(a_ptr, a_temp_shape, xpu::kDevMask);
       TBlob b_res = TBlob(b_ptr, b_temp_shape, xpu::kDevMask);
 
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, a, a_res,
+      mxnet::op::TransposeImpl<xpu>(ctx, a, a_res,
                                     mxnet::TShape(a_axes.begin(), a_axes.end()));
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, b, b_res,
+      mxnet::op::TransposeImpl<xpu>(ctx, b, b_res,
                                     mxnet::TShape(b_axes.begin(), b_axes.end()));
 
       MatrixDot<xpu>(ctx, a_res, b_res, out, req[0], ad1, ad2, bd1, bd2);
@@ -472,16 +472,16 @@ void TensordotBackwardImpl(const Tuple<int>& a_axes_summed,
       TBlob a_res2 = TBlob(a_ptr2, a_T_temp_shape, xpu::kDevMask);
       TBlob b_res2 = TBlob(b_ptr2, b_T_temp_shape, xpu::kDevMask);
 
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, a, a_res2,
+      mxnet::op::TransposeImpl<xpu>(ctx, a, a_res2,
                                     mxnet::TShape(a_T_axes.begin(), a_T_axes.end()));
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, b, b_res2,
+      mxnet::op::TransposeImpl<xpu>(ctx, b, b_res2,
                                     mxnet::TShape(b_T_axes.begin(), b_T_axes.end()));
 
       MatrixDot<xpu>(ctx, a_res2, out_grad, b_res, req[1], ad2, ad1, ad1, bd2);
       MatrixDot<xpu>(ctx, out_grad, b_res2, a_res, req[0], ad1, bd2, bd2, bd1);
 
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, a_res, grad_a, GetReverseShape(a_axes));
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, b_res, grad_b, GetReverseShape(b_axes));
+      mxnet::op::TransposeImpl<xpu>(ctx, a_res, grad_a, GetReverseShape(a_axes));
+      mxnet::op::TransposeImpl<xpu>(ctx, b_res, grad_b, GetReverseShape(b_axes));
     }
   });
 }

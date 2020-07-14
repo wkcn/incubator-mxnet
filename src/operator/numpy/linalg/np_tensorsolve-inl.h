@@ -265,7 +265,7 @@ void TensorsolveOpForward(const nnvm::NodeAttrs& attrs,
         TBlob(b_ptr, b_shape, b.dev_mask(), b.dev_id());
       mxnet::TBlob ipiv_tblob =
         TBlob(ipiv_ptr, b_shape, out.dev_mask(), out.dev_id());
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx,
+      mxnet::op::TransposeImpl<xpu>(ctx,
                                     a_tblob,            // src
                                     a_transpose_tblob,  // res
                                     mxnet::TShape(a_axes.begin(), a_axes.end()));
@@ -282,7 +282,7 @@ void TensorsolveOpForward(const nnvm::NodeAttrs& attrs,
       a_tblob = a_tblob.reshape(Shape2(N, N));
       a_transpose_tblob = a_transpose_tblob.reshape(Shape2(N, N));
       Tuple<int> a_axes_2D(std::vector<int>{1, 0});
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx,
+      mxnet::op::TransposeImpl<xpu>(ctx,
                                     a_transpose_tblob,  // src
                                     a_tblob,            // res
                                     mxnet::TShape(a_axes_2D.begin(), a_axes_2D.end()));
@@ -473,7 +473,7 @@ void TensorsolveBackwardImpl(const Tuple<int>& a_axes_param,
       });
       // Eg: lu_data(2, 3, 2, 15, 4, 5) -> tensorinv_a_data(3, 4, 5, 15, 2, 2)
       tensorinv_a_data = tensorinv_a_data.reshape(reordered_a_shape);
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx,
+      mxnet::op::TransposeImpl<xpu>(ctx,
                                     lu_data,           // src
                                     tensorinv_a_data,  // res
                                     mxnet::TShape(a_axes.begin(), a_axes.end()));
@@ -505,7 +505,7 @@ void TensorsolveBackwardImpl(const Tuple<int>& a_axes_param,
                grad_b_tensor,
                ctx);
       // Eg: grad_a_src(3, 4, 5, 15, 2, 2) --> lu_data(2, 3, 2, 15, 4, 5)
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx,
+      mxnet::op::TransposeImpl<xpu>(ctx,
                                     grad_a_data,  // src
                                     lu_data,      // res
                                     mxnet::TShape(a_origin_axes.begin(), a_origin_axes.end()));

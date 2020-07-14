@@ -320,8 +320,40 @@ inline bool IsIdentityTranspose(const TShape& axes) {
   return true;
 }
 
+template <bool is_addto>
+struct TransposeKernel {
+  /*!
+   * \brief
+   * \param tid      global thread id
+   * \param out_data output data
+   * \param in_data  input data
+   * \param strides  input strides and output strides
+   * \param ndim     the number of dimension
+   */
+  template <typename DType>
+  MSHADOW_XINLINE static void Map(int tid,
+      DType *out_data,
+      const DType *in_data,
+      const dim_t *strides,
+      const int ndim
+      ) {
+    // tid is the index of input data
+    const dim_t *out_strides = strides + ndim;
+    int k = tid;
+    int out_id = 0;
+    for (int i = 0; i < ndim; ++i) {
+      out_id = (k / strides[i]) * out_strides[i];
+      k %= strides[i];
+    }
+    if (is_addto)
+      out_data[out_id] += in_data[tid];
+    else
+      out_data[out_id] = in_data[tid];
+  }
+};
+
 template<typename xpu, bool is_addto = false>
-void TransposeImpl(RunContext ctx,
+void TransposeImpl(const OpContext& ctx,
                    const TBlob& src,
                    const TBlob& ret,
                    const mxnet::TShape& axes) {
@@ -359,62 +391,53 @@ void TransposeImpl(RunContext ctx,
   }
   // Handle the general transpose case
   MSHADOW_TYPE_SWITCH(ret.type_flag_, DType, {
-    switch (axes.ndim()) {
-     case 2: {
+    if (axes.ndim() == 2) {
       Tensor<xpu, 2, DType> in = src.get<xpu, 2, DType>(s);
       Tensor<xpu, 2, DType> out = ret.get<xpu, 2, DType>(s);
-      if (ctx.get_ctx().dev_mask() == cpu::kDevMask) {
+      if (ctx.run_ctx.get_ctx().dev_mask() == cpu::kDevMask) {
         Transpose2D<DType, is_addto>(in.dptr_, out.dptr_, in.shape_[0], in.shape_[1]);
       } else {
         LOG(FATAL) << "Not Implemented. We should never reach here because the 2D case "
                       "in GPU has been covered by transpose_pseudo2D."
                       " Report an issue in Github.";
       }
-      break;
-     }
-     case 3: {
-      Tensor<xpu, 3, DType> in = src.get<xpu, 3, DType>(s);
-      Tensor<xpu, 3, DType> out = ret.get<xpu, 3, DType>(s);
-      if (!is_addto) {
-        out = transpose(in, axes.get<3>());
-      } else {
-        out += transpose(in, axes.get<3>());
+    } else {
+      const mxnet::TShape &in_shape = src.shape_;
+      // strides: in_strides and out_strides
+      const int ndim = axes.ndim();
+      std::vector<dim_t> strides(ndim * 2);
+      // compute in_strides
+      strides[ndim - 1] = 1;
+      for (int i = ndim - 2; i >= 0; --i) {
+        strides[i] = strides[i + 1] * in_shape[i + 1];
       }
-      break;
-     }
-     case 4: {
-      Tensor<xpu, 4, DType> in = src.get<xpu, 4, DType>(s);
-      Tensor<xpu, 4, DType> out = ret.get<xpu, 4, DType>(s);
-      if (!is_addto) {
-        out = transpose(in, axes.get<4>());
-      } else {
-        out += transpose(in, axes.get<4>());
+      // compute out_strides
+      std::vector<dim_t> tmp_strides(ndim);
+      tmp_strides[ndim - 1] = 1;
+      for (int i = ndim - 2; i >= 0; --i) {
+        tmp_strides[i] = tmp_strides[i + 1] * in_shape[axes[i + 1]];
       }
-      break;
-     }
-     case 5: {
-      Tensor<xpu, 5, DType> in = src.get<xpu, 5, DType>(s);
-      Tensor<xpu, 5, DType> out = ret.get<xpu, 5, DType>(s);
-      if (!is_addto) {
-        out = transpose(in, axes.get<5>());
-      } else {
-        out += transpose(in, axes.get<5>());
+      // reorder tmp_strides to out_strides
+      dim_t * const out_strides = &strides[ndim];
+      for (int i = 0; i < ndim; ++i) {
+        out_strides[axes[i]] = tmp_strides[i];
       }
-      break;
-     }
-     case 6: {
-      Tensor<xpu, 6, DType> in = src.get<xpu, 6, DType>(s);
-      Tensor<xpu, 6, DType> out = ret.get<xpu, 6, DType>(s);
-      if (!is_addto) {
-        out = transpose(in, axes.get<6>());
+      Shape<1> strides_shape;
+      strides_shape[0] = ndim * 2;
+      Tensor<cpu, 1, dim_t> strides_cpu(strides.data(), strides_shape);
+      Tensor<xpu, 1, dim_t> strides_xpu =
+        ctx.requested[0].get_space_typed<xpu, 1, dim_t>(strides_shape);
+      // copy arguments into xpu context
+      strides_xpu = strides_cpu;
+      const DType *in = src.dptr<DType>();
+      DType *out = ret.dptr<DType>();
+      if (is_addto) {
+        mxnet_op::Kernel<TransposeKernel<true>, xpu>::Launch(s,
+            in_shape.Size(), out, in, strides_xpu.dptr_, ndim);
       } else {
-        out += transpose(in, axes.get<6>());
+        mxnet_op::Kernel<TransposeKernel<false>, xpu>::Launch(s,
+            in_shape.Size(), out, in, strides_xpu.dptr_, ndim);
       }
-      break;
-     }
-     default:
-      LOG(FATAL) << "Transpose support at most 6 dimensions";
-      break;
     }
   });
 }
@@ -442,9 +465,9 @@ void Transpose(const nnvm::NodeAttrs& attrs,
     axes = common::CanonicalizeAxes(param.axes);
   }
   if (req[0] == kAddTo) {
-    TransposeImpl<xpu, true>(ctx.run_ctx, inputs[0], outputs[0], axes);
+    TransposeImpl<xpu, true>(ctx, inputs[0], outputs[0], axes);
   } else {
-    TransposeImpl<xpu, false>(ctx.run_ctx, inputs[0], outputs[0], axes);
+    TransposeImpl<xpu, false>(ctx, inputs[0], outputs[0], axes);
   }
 }
 
@@ -458,7 +481,6 @@ inline bool TransposeShape(const nnvm::NodeAttrs& attrs,
   mxnet::TShape& out_shp = (*out_attrs)[0];
   if (!mxnet::ndim_is_known(shp) && !mxnet::ndim_is_known(out_shp))
     return false;  // none of the shapes is known
-  CHECK_LE(shp.ndim(), 6) << "Transpose support at most 6 dimensions";
   if (out_shp.ndim() >= 0 && shp.ndim() >= 0)
     CHECK_EQ(out_shp.ndim(), shp.ndim());
   mxnet::TShape get(std::max(shp.ndim(), out_shp.ndim()), -1);

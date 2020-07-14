@@ -147,7 +147,7 @@ struct SVDWrapper {
     if (nrow > ncol) {
       const_cast<TBlob&>(u) = u.reshape(ut_shape);
       const_cast<TBlob&>(v) = v.reshape(vt_shape);
-      mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, a, u, ut_axis);
+      mxnet::op::TransposeImpl<xpu>(ctx, a, u, ut_axis);
       BatchSVDImpl(ncol, nrow,
                    v.FlatToKD<xpu, 3, DType>(s_xpu),
                    s.FlatToKD<xpu, 2, DType>(s_xpu),

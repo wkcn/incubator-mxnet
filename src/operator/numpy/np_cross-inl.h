@@ -310,9 +310,9 @@ struct NumpyCrossForwardImpl {
         DType *b_ptr = a_ptr + a_moveaxis_shape.Size();
         a_data = TBlob(a_ptr, a_moveaxis_shape, a.dev_mask(), a.dev_id());
         b_data = TBlob(b_ptr, b_moveaxis_shape, b.dev_mask(), b.dev_id());
-        TransposeImpl<xpu>(ctx.run_ctx, a, a_data,
+        TransposeImpl<xpu>(ctx, a, a_data,
                            mxnet::TShape(a_moveaxis_index.begin(), a_moveaxis_index.end()));
-        TransposeImpl<xpu>(ctx.run_ctx, b, b_data,
+        TransposeImpl<xpu>(ctx, b, b_data,
                            mxnet::TShape(b_moveaxis_index.begin(), b_moveaxis_index.end()));
       }
       aw_data = TBlob(aw_ptr, GetCutoffShape(a_moveaxis_shape), a.dev_mask(), a.dev_id());
@@ -354,9 +354,9 @@ struct NumpyCrossForwardImpl {
                        b.dev_mask(), b.dev_id());
         offset = AligndWorkspaceSize<DType>(offset, b_data.shape_.Size());
 
-        TransposeImpl<xpu>(ctx.run_ctx, a, a_data,
+        TransposeImpl<xpu>(ctx, a, a_data,
                           mxnet::TShape(a_moveaxis_index.begin(), a_moveaxis_index.end()));
-        TransposeImpl<xpu>(ctx.run_ctx, b, b_data,
+        TransposeImpl<xpu>(ctx, b, b_data,
                           mxnet::TShape(b_moveaxis_index.begin(), b_moveaxis_index.end()));
       }
     }
@@ -405,7 +405,7 @@ struct NumpyCrossForwardImpl {
     const DType *res_ptr = c_data.dptr<DType>();
     if (c_axis != c_ndim -1) {
       const Tuple<int> c_axis_index = GetMoveaxisIndex(-1, c_axis, c_moveaxis_shape);
-      TransposeImpl<xpu>(ctx.run_ctx, c_data, cw_data,
+      TransposeImpl<xpu>(ctx, c_data, cw_data,
                          mxnet::TShape(c_axis_index.begin(), c_axis_index.end()));
       res_ptr = cw_data.dptr<DType>();
     }
@@ -451,9 +451,9 @@ struct NumpyCrossForwardImpl<xpu, DType, 2, 2> {
         DType *b_ptr = a_ptr + a_moveaxis_shape.Size();
         a_data = TBlob(a_ptr, a_moveaxis_shape, a.dev_mask(), a.dev_id());
         b_data = TBlob(b_ptr, b_moveaxis_shape, b.dev_mask(), b.dev_id());
-        TransposeImpl<xpu>(ctx.run_ctx, a, a_data,
+        TransposeImpl<xpu>(ctx, a, a_data,
                            mxnet::TShape(a_moveaxis_index.begin(), a_moveaxis_index.end()));
-        TransposeImpl<xpu>(ctx.run_ctx, b, b_data,
+        TransposeImpl<xpu>(ctx, b, b_data,
                            mxnet::TShape(b_moveaxis_index.begin(), b_moveaxis_index.end()));
       }
     } else {
@@ -481,9 +481,9 @@ struct NumpyCrossForwardImpl<xpu, DType, 2, 2> {
                        b.dev_mask(), b.dev_id());
         offset = AligndWorkspaceSize<DType>(offset, b_data.shape_.Size());
 
-        TransposeImpl<xpu>(ctx.run_ctx, a, a_data,
+        TransposeImpl<xpu>(ctx, a, a_data,
                            mxnet::TShape(a_moveaxis_index.begin(), a_moveaxis_index.end()));
-        TransposeImpl<xpu>(ctx.run_ctx, b, b_data,
+        TransposeImpl<xpu>(ctx, b, b_data,
                            mxnet::TShape(b_moveaxis_index.begin(), b_moveaxis_index.end()));
       }
     }
@@ -813,7 +813,7 @@ struct NumpyCrossBackwardImpl {
           const Tuple<int> axis_idx = GetMoveaxisIndex(-1, a_axis, c_move_dshp);
           mxnet::TShape c_dshp = GetMoveaxisShape(axis_idx, c_move_dshp);
           w1_data = TBlob(w1_ptr, c_dshp, grad_c.dev_mask(), grad_c.dev_id());
-          TransposeImpl<xpu>(ctx.run_ctx, w2_data, w1_data,
+          TransposeImpl<xpu>(ctx, w2_data, w1_data,
                              mxnet::TShape(axis_idx.begin(), axis_idx.end()));
           w2_data = TBlob(w2_ptr, grad_a.shape_, grad_c.dev_mask(), grad_c.dev_id());
         } else {
@@ -861,7 +861,7 @@ struct NumpyCrossBackwardImpl {
           const Tuple<int> axis_idx = GetMoveaxisIndex(-1, b_axis, c_move_dshp);
           mxnet::TShape c_dshp = GetMoveaxisShape(axis_idx, c_move_dshp);
           w1_data = TBlob(w1_ptr, c_dshp, grad_c.dev_mask(), grad_c.dev_id());
-          TransposeImpl<xpu>(ctx.run_ctx, w2_data, w1_data,
+          TransposeImpl<xpu>(ctx, w2_data, w1_data,
                              mxnet::TShape(axis_idx.begin(), axis_idx.end()));
           w2_data = TBlob(w2_ptr, grad_b.shape_, grad_c.dev_mask(), grad_c.dev_id());
         } else {
@@ -918,7 +918,7 @@ struct NumpyCrossBackwardImpl {
           // Transpose w2_data to w1_data.
           const Tuple<int> grad_a_axis_idx = GetMoveaxisIndex(-1, a_axis, a_move_shp);
           w1_data = TBlob(w1_ptr, grad_a.shape_, grad_c.dev_mask(), grad_c.dev_id());
-          TransposeImpl<xpu>(ctx.run_ctx, w2_data, w1_data,
+          TransposeImpl<xpu>(ctx, w2_data, w1_data,
                              mxnet::TShape(grad_a_axis_idx.begin(), grad_a_axis_idx.end()));
           res_ptr = w1_data.dptr<DType>();
         }
@@ -946,7 +946,7 @@ struct NumpyCrossBackwardImpl {
           // Transpose w2_data to w1_data.
           const Tuple<int> grad_b_axis_idx = GetMoveaxisIndex(-1, b_axis, b_move_shp);
           w1_data = TBlob(w1_ptr, grad_b.shape_, grad_c.dev_mask(), grad_c.dev_id());
-          TransposeImpl<xpu>(ctx.run_ctx, w2_data, w1_data,
+          TransposeImpl<xpu>(ctx, w2_data, w1_data,
                              mxnet::TShape(grad_b_axis_idx.begin(), grad_b_axis_idx.end()));
           res_ptr = w1_data.dptr<DType>();
         }
@@ -1171,9 +1171,9 @@ struct NumpyCrossBackwardImpl<xpu, DType, 2, 2> {
         DType *b_ptr = a_ptr + a_move_shp.Size();
         a_move_data = TBlob(a_ptr, a_move_shp, a.dev_mask(), a.dev_id());
         b_move_data = TBlob(b_ptr, b_move_shp, b.dev_mask(), b.dev_id());
-        TransposeImpl<xpu>(ctx.run_ctx, a, a_move_data,
+        TransposeImpl<xpu>(ctx, a, a_move_data,
                            mxnet::TShape(a_move_idx.begin(), a_move_idx.end()));
-        TransposeImpl<xpu>(ctx.run_ctx, b, b_move_data,
+        TransposeImpl<xpu>(ctx, b, b_move_data,
                            mxnet::TShape(b_move_idx.begin(), b_move_idx.end()));
       } else {
         DType *w1_ptr = workspace.dptr_ + wk_size[0];
@@ -1183,9 +1183,9 @@ struct NumpyCrossBackwardImpl<xpu, DType, 2, 2> {
         b_move_data = TBlob(w1_ptr + offset, b_move_shp, a.dev_mask(), a.dev_id());
         offset = AligndWorkspaceSize<DType>(offset, a_move_shp.Size());
 
-        TransposeImpl<xpu>(ctx.run_ctx, a, a_move_data,
+        TransposeImpl<xpu>(ctx, a, a_move_data,
                            mxnet::TShape(a_move_idx.begin(), a_move_idx.end()));
-        TransposeImpl<xpu>(ctx.run_ctx, b, b_move_data,
+        TransposeImpl<xpu>(ctx, b, b_move_data,
                            mxnet::TShape(b_move_idx.begin(), b_move_idx.end()));
       }
     }
@@ -1232,7 +1232,7 @@ struct NumpyCrossBackwardImpl<xpu, DType, 2, 2> {
         offset = AligndWorkspaceSize<DType>(offset, grad_shp.Size());
       }
       const Tuple<int> axis_idx = GetMoveaxisIndex(-1, a_axis, grad_move_shp);
-      TransposeImpl<xpu>(ctx.run_ctx, grad_move_data, grad_data,
+      TransposeImpl<xpu>(ctx, grad_move_data, grad_data,
                          mxnet::TShape(axis_idx.begin(), axis_idx.end()));
     }
     if (!a_reduce_axis.empty()) {
@@ -1293,7 +1293,7 @@ struct NumpyCrossBackwardImpl<xpu, DType, 2, 2> {
         offset = AligndWorkspaceSize<DType>(offset, grad_shp.Size());
       }
       const Tuple<int> axis_idx = GetMoveaxisIndex(-1, b_axis, grad_move_shp);
-      TransposeImpl<xpu>(ctx.run_ctx, grad_move_data, grad_data,
+      TransposeImpl<xpu>(ctx, grad_move_data, grad_data,
                          mxnet::TShape(axis_idx.begin(), axis_idx.end()));
     }
     if (!b_reduce_axis.empty()) {

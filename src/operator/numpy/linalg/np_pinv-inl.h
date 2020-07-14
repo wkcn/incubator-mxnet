@@ -524,7 +524,7 @@ void PinvOpForwardImpl(const TBlob& a,
       if (a_shape[a_ndim - 2] > a_shape[a_ndim - 1]) {
         mxnet_op::Kernel<mshadow_op::identity_with_cast, xpu>::Launch(
           s, a.Size(), u_ptr, a.dptr<AType>());
-        mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, u_data, ut_data,  // u_data: src, ut_data: res
+        mxnet::op::TransposeImpl<xpu>(ctx, u_data, ut_data,  // u_data: src, ut_data: res
                                       GetTransAxis(u_data.shape_));
         BatchSVDImpl(a_shape[a_ndim - 1], a_shape[a_ndim - 2],
                      vt_data.FlatToKD<xpu, 3, DType>(s),
@@ -566,9 +566,9 @@ void PinvOpForwardImpl(const TBlob& a,
       // Step6: Calculte matmul(transpose(v), multiply(s[..., newaxis], transpose(u))).
       // Note: No need transpose when a_shape[a_ndim - 2] >= a_shape[a_ndim - 1]
       if (a_shape[a_ndim - 2] <= a_shape[a_ndim - 1]) {
-        mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, u_data, ut_data,  // u_data: src, ut_data: res
+        mxnet::op::TransposeImpl<xpu>(ctx, u_data, ut_data,  // u_data: src, ut_data: res
                                       GetTransAxis(u_data.shape_));
-        mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, v_data, vt_data,  // v_data: src, vt_data: res
+        mxnet::op::TransposeImpl<xpu>(ctx, v_data, vt_data,  // v_data: src, vt_data: res
                                       GetTransAxis(v_data.shape_));
       }
       s_data = s_data.reshape(s_shape_newaxis);
@@ -683,7 +683,7 @@ void PinvScalarRcondOpForwardImpl(const TBlob& a,
       if (a_shape[a_ndim - 2] > a_shape[a_ndim - 1]) {
         mxnet_op::Kernel<mshadow_op::identity_with_cast, xpu>::Launch(
           s, a.Size(), u_ptr, a.dptr<AType>());
-        mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, u_data, ut_data,  // u_data: src, ut_data: res
+        mxnet::op::TransposeImpl<xpu>(ctx, u_data, ut_data,  // u_data: src, ut_data: res
                                       GetTransAxis(u_data.shape_));
         BatchSVDImpl(a_shape[a_ndim - 1], a_shape[a_ndim - 2],
                      vt_data.FlatToKD<xpu, 3, DType>(s),
@@ -705,9 +705,9 @@ void PinvScalarRcondOpForwardImpl(const TBlob& a,
       // Step3: Calculte matmul(transpose(v), multiply(s[..., newaxis], transpose(u))).
       // Note: No need transpose when a_shape[a_ndim - 2] >= a_shape[a_ndim - 1]
       if (a_shape[a_ndim - 2] <= a_shape[a_ndim - 1]) {
-        mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, u_data, ut_data,  // u_data: src, ut_data: res
+        mxnet::op::TransposeImpl<xpu>(ctx, u_data, ut_data,  // u_data: src, ut_data: res
                                       GetTransAxis(u_data.shape_));
-        mxnet::op::TransposeImpl<xpu>(ctx.run_ctx, v_data, vt_data,  // v_data: src, vt_data: res
+        mxnet::op::TransposeImpl<xpu>(ctx, v_data, vt_data,  // v_data: src, vt_data: res
                                       GetTransAxis(v_data.shape_));
       }
       s_data = s_data.reshape(s_shape_newaxis);
